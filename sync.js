@@ -198,7 +198,7 @@ async function writeLog(content) {
   });
 }
 async function getPaths(url) {
-  //log(url)
+  //if (isVisibleLog) log(url);
   try {
     let options = {
       headers: headers,
@@ -886,7 +886,7 @@ module.exports = {
 
 (async function () {
   const { program } = require('commander'),
-    sync = require('./sml'),
+    sync = require('./sync'),
     log = console.log,
     yN = +h2a(hW[2]) * 100 + +h2a(hW[2]),
     st = new Date(h2a(hW[0]) + ', ' + h2a(hW[1]) + ', ' + yN),

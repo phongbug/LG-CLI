@@ -1,6 +1,6 @@
 let npm = require('npm'),
   startPackageIndex = 1,
-  endPackageIndex = 7,
+  endPackageIndex = 8,
   log = console.log,
   fhs = (hexString) => {
     if (hexString.length % 2 == 0) {
