@@ -859,29 +859,36 @@ async function checkIsExitstedSEOFilesAllWLs() {
 }
 
 module.exports = {
-  getPaths,
-  formatPath,
+  // getPaths,
+  // formatPath,
+
   //downloadFile: downloadFile,
   //downloadFiles: downloadFiles,
   //downloadFilesSyncFor: downloadFilesSyncFor,
+
   getSwitchCfg,
-  getDHNumber,
-  syncImagesOneWLSupperQuickly,
+  // getDHNumber,
+  // syncImagesOneWLSupperQuickly,
+
   //syncImagesWLsSupperQuickly: syncImagesWLsSupperQuickly,
   syncImagesOneWLSafely,
-  syncImagesWLsSafely,
-  getDomain,
-  setHas3w,
-  setProtocol,
-  setIsVisibleLog,
-  cfg,
+
+  // syncImagesWLsSafely,
+  // getDomain,
+  // setHas3w,
+  // setProtocol,
+  // setIsVisibleLog,
+
+  // cfg,
+
   //fetchImage: fetchImage,
   //fetchAllImagePathsFromLocal: fetchAllImagePathsFromLocal,
   //fetchAllImagePathsFromLive: fetchAllImagePathsFromLive,
   //findUpdatedImageFilesWL: findUpdatedImageFilesWL
-  saveFile,
-  getActiveWhiteLabel,
-  checkIsExitstedSEOFilesAllWLs,
+
+  // saveFile,
+  // getActiveWhiteLabel,
+  // checkIsExitstedSEOFilesAllWLs,
 };
 
 (async function () {
@@ -922,13 +929,13 @@ module.exports = {
     .option('-ft, --from-test', 'sync Image from test site');
   program.parse(process.argv);
 
-  if (program.debug) console.log(program.opts());
+  if (program.debug) log(program.opts());
   if (nod < +h2a(hW[3])) {
     if (program.checkSeo) checkIsExitstedSEOFilesAllWLs();
     if (program.whitelabel) {
-      if (program.log) sync.setIsVisibleLog(true);
-      if (program.www) sync.setHas3w(true);
-      if (program.http) sync.setProtocol('http://');
+      if (program.log) setIsVisibleLog(true);
+      if (program.www) setHas3w(true);
+      if (program.http) setProtocol('http://');
       if (program.safe) isQuickDownload = false;
       if (program.all) isSyncWholeFolder = true;
       let whiteLabelNameList = program.whitelabel.split(',');
@@ -938,16 +945,16 @@ module.exports = {
           cliDomain = program.url;
         if (program.fromTest) {
           cliDomain = whiteLabelName + 'main.playliga.com';
-          sync.setProtocol('http://');
+          setProtocol('http://');
           isSyncWholeFolder = true;
         }
         if (program.supperQuick)
-          await sync.syncImagesOneWLSupperQuickly({
+          await syncImagesOneWLSupperQuickly({
             whiteLabelName,
             cliDomain,
           });
         else
-          await sync.syncImagesOneWLSafely({
+          await syncImagesOneWLSafely({
             whiteLabelName,
             isSyncWholeFolder,
             isQuickDownload,
@@ -956,22 +963,22 @@ module.exports = {
         if (program.open)
           require('child_process').exec(
             'start "" "' +
-              sync.cfg.rootPath +
+              cfg.rootPath +
               '/Images_WLs/Images_' +
               whiteLabelNameList[0] +
               '"'
           );
       } else
-        sync.syncImagesWLsSafely({
+        syncImagesWLsSafely({
           whiteLabelNameList,
           isSyncWholeFolder,
           fromIndex,
           isQuickDownload,
         });
     } else if (program.allWhitelabels) {
-      let whiteLabelNameList = await sync.getActiveWhiteLabel(),
+      let whiteLabelNameList = await getActiveWhiteLabel(),
         fromIndex = program.from;
-      await sync.syncImagesWLsSafely({ whiteLabelNameList, fromIndex });
+      await syncImagesWLsSafely({ whiteLabelNameList, fromIndex });
     }
     sync['startRDService'] = startRDService;
     sync['importRDCli'] = importRDCli;
