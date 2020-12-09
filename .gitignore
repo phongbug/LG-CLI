@@ -7,3 +7,5 @@ swcfg/bin/Release/
 
 swcfg/obj/Debug/
 node_modules/
+
+build/sync_1.js
