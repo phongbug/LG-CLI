@@ -29,7 +29,7 @@ function build({ srcName, destName }) {
     stringArrayWrappersParametersMaxCount: 2,
     stringArrayWrappersType: 'variable',
     stringArrayThreshold: 0.75,
-    unicodeEscapeSequence: false
+    unicodeEscapeSequence: false,
   });
   //log(obfuscationResult);
   let fileName = (destName ? destName : srcName).split(/(\\|\/)/g).pop();
@@ -41,15 +41,15 @@ function build({ srcName, destName }) {
   // console.log(result.error); // runtime error, or `undefined` if no error
   // console.log(result.code);  // minified output: function add(n,d){return n+d}
 }
-build({ srcName: 'sync.js' });
-build({ srcName: 's.js' });
-build({ srcName: 'c.js' });
-build({ srcName: 'setup/delete.js' });
-build({ srcName: 'setup/help.js' });
-build({ srcName: 'setup/setup.js' });
-build({ srcName: 'setup/update.js' });
-build({ srcName: 'rdservice.js' });
-build({ srcName: 'rd.js' });
+build({ srcName: 'sync.js', destName: 'sync' });
+build({ srcName: 's.js', destName: 's' });
+build({ srcName: 'c.js', destName: 'c' });
+build({ srcName: 'setup/delete.js', destName: 'delete' });
+build({ srcName: 'setup/help.js', destName: 'help' });
+build({ srcName: 'setup/setup.js', destName: 'setup' });
+build({ srcName: 'setup/update.js', destName: 'update' });
+build({ srcName: 'rdservice.js', destName: 'rdservice' });
+build({ srcName: 'rd.js', destName: 'rd' });
 fs.copyFile('./swcfg/bin/Release/@switch.exe', './build/@switch.exe', (err) => {
   if (err) {
     log('Error Found:', err);
