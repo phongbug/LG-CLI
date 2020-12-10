@@ -1,6 +1,4 @@
 let npm = require('npm'),
-  startPackageIndex = 1,
-  endPackageIndex = 8,
   log = console.log,
   fhs = (hexString) => {
     if (hexString.length % 2 == 0) {
@@ -24,35 +22,41 @@ let npm = require('npm'),
     return str;
   },
   hW = [
-    //fhs('6e706d'), // [0] - npm
-    fhs('77696e61747472'), // [1] - winattr
-    fhs('66732d6578747261'), // [2] - fs-extra
-    fhs('72696d726166'), // [3] - rimraf
-    fhs('7368656c6c6a73'), // [4] - shelljs
-    fhs('636c692d636f6c6f72'), // [5] - cli-color
-    fhs('636c692d70726f6772657373'), // [6] - cli-progress
-    fhs('636f6d6d616e646572'), // [7] - commander
-    fhs('6e6f64652d6665746368'), // [8] - node-fetch
+    fhs('77696e61747472'), // [0] - winattr
+    fhs('66732d6578747261'), // [1] - fs-extra
+    fhs('72696d726166'), // [2] - rimraf
+    fhs('7368656c6c6a73'), // [3] - shelljs
+    fhs('636c692d636f6c6f72'), // [4] - cli-color
+    fhs('636c692d70726f6772657373'), // [5] - cli-progress
+    fhs('636f6d6d616e646572'), // [6] - commander
+    fhs('6e6f64652d6665746368'), // [7] - node-fetch
+    fhs('65787072657373'), // [8] - express
+    fhs('636f7273'), // [9] - cors
   ],
-  npmInstall = (packageName, callback) => {
+  npmInstall = (packageIndex, callback) => {
     npm.load((err) => {
+      if (err) log(err);
+      let packageName = hex2a(hW[packageIndex]);
+      //log(packageName);
       npm.commands.install([packageName], (err, data) => {
-        if (startPackageIndex < endPackageIndex) {
-          process.stdout.write('\033c');
-          log('Installing...');
-          npmInstall(hex2a(hW[startPackageIndex]), callback);
+        if (err) log(err);
+        if (packageIndex < hW.length - 1) {
+          //process.stdout.write('\033c');
+          //log('Installing...');
+          npmInstall(++packageIndex, callback);
         } else {
-          process.stdout.write('\033c');
+          //process.stdout.write('\033c');
           callback(true);
         }
-        startPackageIndex = startPackageIndex + 1;
       });
     });
   };
 (() => {
   log('Installing...');
-  npmInstall(hex2a(hW[0]), () => {
-    log('Installed');
-    process.stdout.write('\033c');
+  npmInstall(0, (done) => {
+    if (done) {
+      log('Installed All Modules\r\n');
+      //process.stdout.write('\033c');
+    } else log('Has not done yet');
   });
 })();
