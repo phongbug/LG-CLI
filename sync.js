@@ -867,7 +867,7 @@ module.exports = {
   //downloadFilesSyncFor: downloadFilesSyncFor,
 
   getSwitchCfg,
-  // getDHNumber,
+  getDHNumber,
   // syncImagesOneWLSupperQuickly,
 
   //syncImagesWLsSupperQuickly: syncImagesWLsSupperQuickly,
@@ -886,7 +886,7 @@ module.exports = {
   //fetchAllImagePathsFromLive: fetchAllImagePathsFromLive,
   //findUpdatedImageFilesWL: findUpdatedImageFilesWL
 
-  // saveFile,
+  saveFile,
   // getActiveWhiteLabel,
   // checkIsExitstedSEOFilesAllWLs,
 };
