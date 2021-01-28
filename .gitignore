@@ -9,3 +9,9 @@ swcfg/obj/Debug/
 node_modules/
 
 build/sync_1.js
+
+domains_member_name.json
+
+domains_name_member.json
+
+domains_name_mobile.json

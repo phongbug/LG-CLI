@@ -78,6 +78,15 @@ node sync -wl BANANA --test --log -o
 
 ***All notable changes to this project will be documented in this part.***
 
+## [0.2.0r214]
+
+### Added
+
+- Sync domain name of all whitelabel of member, agent, mobile
+  - member `node sync -dm` -> `domains_name_member.json`
+  - agent `node sync -dm -st agent` -> `domains_name_agent.json`
+  - mobile `node sync -dm -st mobile` -> `domains_name_mobile.json`
+
 ## [0.1.1r185]
 
 ### Changed
@@ -273,3 +282,4 @@ node sync -wl BANANA --test --log -o
 
 ## Notes
 
+- Build version got error when it run syncing -all domain message : hostname not found

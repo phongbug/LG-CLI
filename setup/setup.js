@@ -22,16 +22,16 @@ let npm = require('npm'),
     return str;
   },
   hW = [
-    fhs('77696e61747472'), // [0] - winattr
-    fhs('66732d6578747261'), // [1] - fs-extra
-    fhs('72696d726166'), // [2] - rimraf
-    fhs('7368656c6c6a73'), // [3] - shelljs
-    fhs('636c692d636f6c6f72'), // [4] - cli-color
-    fhs('636c692d70726f6772657373'), // [5] - cli-progress
-    fhs('636f6d6d616e646572'), // [6] - commander
-    fhs('6e6f64652d6665746368'), // [7] - node-fetch
-    fhs('65787072657373'), // [8] - express
-    fhs('636f7273'), // [9] - cors
+    fhs('636c692d636f6c6f72'), // [0] - cli-color
+    fhs('636c692d70726f6772657373'), // [1] - cli-progress
+    fhs('636f6d6d616e646572'), // [2] - commander
+    fhs('636f7273'), // [3] - cors
+    fhs('65787072657373'), // [4] - express
+    fhs('66732d6578747261'), // [5] - fs-extra
+    fhs('6e6f64652d6665746368'), // [6] - node-fetch
+    fhs('72696d726166'), // [7] - rimraf
+    fhs('7368656c6c6a73'), // [8] - shelljs
+    fhs('77696e61747472'), // [9] - winattr
   ],
   npmInstall = (packageIndex, callback) => {
     npm.load((err) => {

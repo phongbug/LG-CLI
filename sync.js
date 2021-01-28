@@ -3,6 +3,9 @@ let cfg = require('./switch.cfg'),
   shell = require('shelljs'),
   fetch = require('node-fetch'),
   fs = require('fs'),
+  JSEncrypt = require('node-jsencrypt'),
+  crypt = new JSEncrypt(),
+  CryptoJS = require('crypto-js'),
   path = require('path'),
   userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
@@ -212,12 +215,12 @@ async function getPaths(url) {
   } catch (error) {
     //log(error)
     if (error.message.indexOf('getaddrinfo') > -1)
-      log(cliColor.red("======> DOMAIN %s don't exist"), error.cause.hostname);
+      log(cliColor.red("======> DOMAIN %s don't exist"));
     //http://prntscr.com/sk7rcv
     else if (error.message.substring(0, 3) === '503')
-      log(cliColor.red('======> [503] '), error.message, error.options.uri);
+      log(cliColor.red('======> [503] '));
     else if (error.message.substring(0, 3) === '404')
-      log(cliColor.red('======> [404] Page not found'), error.options.uri);
+      log(cliColor.red('======> [404] Page not found'));
     else if (error.message.indexOf('ECONNREFUSED') > -1)
       log(
         cliColor.red("======> [ECONNREFUSED] Domain has't not actived yet "),
@@ -251,10 +254,23 @@ async function getDHNumber(whiteLabelName) {
     log(error);
   }
 }
-async function getDomain(whiteLabelName) {
+let getValidDomain = (whitelabelName) => {
   try {
+    return require('./domains_name_member.json')[whitelabelName] || false;
+  } catch (error) {
+    log(
+      cliColor.yellow('==> Please type: `node sync -dm` to sync valid domain name of all whitelabels')
+    );
+    return false;
+  }
+};
+
+async function getDomain(whitelabelName) {
+  try {
+    let domain = getValidDomain(whitelabelName);
+    if (domain) return domain;
     let result = await getSwitchCfg();
-    return result['Clients'][whiteLabelName.toUpperCase()]['defaultDomain'];
+    return result['Clients'][whitelabelName.toUpperCase()]['defaultDomain'];
   } catch (error) {
     log(error);
   }
@@ -857,7 +873,138 @@ async function checkIsExitstedSEOFilesAllWLs() {
     );
   }
 }
+// ==================== SYNC DOMAIN ====================
 
+async function aunthenticate(domainType = 'name') {
+  let username = cfg.username,
+    password = cfg.password,
+    hostBorderPx1 =
+      domainType === 'ip' ? cfg.hostBorderPx1Ip : cfg.hostBorderPx1Name,
+    authenticationData = { username, password, hostBorderPx1 },
+    authenticationPublicKey =
+      '-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDAvTtsvfokKvLN7JNkzId1ZLroOSIEuntrHD22yab9JeuLviOFOeyq0qQ5q8d2OgcB1M+xDlGy8h6/YoqcL/C6iiDZdi4ft+CUQF2ErqPoI3G/Nc4/fNMd4Yz5wZk0DMDLJLdKVHROGuY+HIGAjpklZRzcGQltMS05XYzirhiuTwIDAQAB-----END PUBLIC KEY-----';
+  crypt.setKey(authenticationPublicKey);
+
+  authenticationData = crypt.encrypt(JSON.stringify(authenticationData));
+  //log(authenticationData);
+  let response = await fetch(cfg.hostBorderPx1Api + '/authentication', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      authenticationData,
+      domainType,
+    }),
+  });
+  let result = await response.json();
+  log(result);
+  return { success: result.success, cookie: result.cookie };
+}
+
+/**
+ *
+ * @param {*} whitelabelName
+ * @param {*} siteType [member, agent, mobile]
+ * @param {*} domainType
+ */
+async function fetchAllDomains({
+  whitelabelName,
+  siteType = 'member',
+  domainType = 'name',
+  cookie,
+}) {
+  let siteName =
+      cfg.siteTypes[siteType] + whitelabelName.toLowerCase() + '.bpx',
+    url = cfg.hostBorderPx1Api + '/info/domain/' + domainType + '/' + siteName;
+  //log(url);
+  let response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      cookie: 'border-px1=' + cookie,
+    },
+  });
+  result = await response.json();
+  if (result.success) {
+    let domains = JSON.parse(
+      CryptoJS.AES.decrypt(result.domains, 'The domain data').toString(
+        CryptoJS.enc.Utf8
+      )
+    ).map((e) => e.Domain);
+    log(domains);
+    return domains;
+  }
+  return [];
+}
+async function isValidDomain(domain, siteType = 'member') {
+  siteType = cfg.siteTypes[siteType];
+  domain = encodeURIComponent(domain);
+  let url =
+    cfg.hostBorderPx1Api +
+    '/info/' +
+    (siteType === 'mobile' ? 'mobile' : 'folder') +
+    '?' +
+    new URLSearchParams({ url: cfg.protocol + domain });
+
+  return (await (await fetch(url)).json()).success;
+}
+async function findFristValidDomain(domains) {
+  for (let i = 0; i < domains.length; i++) {
+    let domain = domains[i];
+    let isValid = await isValidDomain(domain);
+    if (isValid) return domain;
+  }
+  return false;
+}
+
+// return value is {"BANANA":"banana.com"}
+async function fetchValidDomain({
+  whitelabelName,
+  siteType = 'member',
+  domainType = 'name',
+  cookie,
+}) {
+  let domains = await fetchAllDomains({
+    whitelabelName,
+    siteType,
+    domainType,
+    cookie,
+  });
+  let validDomain = await findFristValidDomain(domains);
+  let result = {};
+  result[whitelabelName] = validDomain ? validDomain : '';
+  return result;
+}
+async function syncValidDomainsAllWLs({
+  siteType = 'member',
+  domainType = 'name',
+  cookie,
+}) {
+  let validDomains = {},
+    wlList = await getActiveWhiteLabel();
+  for (let i = 0; i < wlList.length; i++) {
+    let whitelabelName = wlList[i];
+    //log(whitelabelName);
+    let validDomain = await fetchValidDomain({
+      whitelabelName,
+      siteType,
+      domainType,
+      cookie,
+    });
+    validDomains = { ...validDomains, ...validDomain };
+    let fileName = './domains_' + domainType + '_' + siteType + '.json';
+    fs.writeFile(
+      fileName,
+      JSON.stringify(validDomains, null, '\t') + '\r\n',
+      function (err) {
+        if (err) log(err);
+        //log('saved to ' + fileName);
+      }
+    );
+    await delay(500);
+  }
+  return validDomains;
+}
+// =========================== Export Part ===========================
 module.exports = {
   // getPaths,
   // formatPath,
@@ -890,6 +1037,24 @@ module.exports = {
   // getActiveWhiteLabel,
   // checkIsExitstedSEOFilesAllWLs,
 };
+
+// =========================== Test Part  ===========================
+(async function () {
+  // let cookie = await (await aunthenticate()).cookie;
+  // console.log(cookie);
+  // let domains = await fetchAllDomains({
+  //   whitelabelName: 'hahaha',
+  //   cookie: cookie,
+  // });
+  //console.log(domains);
+  //console.log(await isValidDomain('hihihi.org'));
+  // console.log(
+  //   await fetchValidDomain({ whitelabelName: 'hanana', cookie: cookie })
+  // );
+  //console.log(await syncValidDomainsAllWLs({ cookie: cookie }));
+  //console.log(domains);
+  //console.log(await isValidDomain('huhuhu.com'));
+})();
 
 (async function () {
   const { program } = require('commander'),
@@ -926,7 +1091,14 @@ module.exports = {
     .option('-u, --url <url>', "spectify WL's url to sync Images")
     .option('-l, --log', 'enable log mode')
     .option('-aaa, --check-seo', 'check SEO(DM/FT) are existed')
-    .option('-ft, --from-test', 'sync Image from test site');
+    .option('-ft, --from-test', 'sync Image from test site')
+    .option('-dm, --domain', 'sync first valid domain of all whitelabels')
+    .option(
+      '-st, --site-type <type>',
+      'specify type of site["member", "agent", "mobile"]'
+    )
+    .option('-dt, --domain-type <type>', 'specify type of domain["name","ip"]')
+    .option('-dm, --domain', 'sync first valid domain of all whitelabels');
   program.parse(process.argv);
 
   if (program.debug) log(program.opts());
@@ -979,6 +1151,13 @@ module.exports = {
       let whiteLabelNameList = await getActiveWhiteLabel(),
         fromIndex = program.from;
       await syncImagesWLsSafely({ whiteLabelNameList, fromIndex });
+    } else if (program.domain) {
+      // white sync all active wls
+      let siteType = program['siteType'],
+        domainType = program['domainType'],
+        cookie;
+      cookie = await (await aunthenticate()).cookie;
+      await syncValidDomainsAllWLs({ siteType, domainType, cookie });
     }
     sync['startRDService'] = startRDService;
     sync['importRDCli'] = importRDCli;
