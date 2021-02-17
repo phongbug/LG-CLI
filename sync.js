@@ -1070,7 +1070,7 @@ module.exports = {
 
   program
     //.version(toVer(nod) + '7')
-    .version('0.1.0r' + nod, '-v, --vers', 'output the current version')
+    .version('0.2.0r' + nod, '-v, --vers', 'output the current version')
     .option('-d, --debug', 'output extra debugging')
     .option('-s, --safe', 'sync latest Images slowly and safely')
     .option('-q, --quick', 'sync latest Images quickly')

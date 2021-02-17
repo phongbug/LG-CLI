@@ -15,3 +15,15 @@ domains_member_name.json
 domains_name_member.json
 
 domains_name_mobile.json
+
+Log.txt
+
+build/WLs.txt
+
+build/yarn.lock
+
+build/switch.cfg
+
+a2h.js
+
+hexwords.js
