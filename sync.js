@@ -259,7 +259,9 @@ let getValidDomain = (whitelabelName) => {
     return require('./domains_name_member.json')[whitelabelName] || false;
   } catch (error) {
     log(
-      cliColor.yellow('==> Please type: `node sync -dm` to sync valid domain name of all whitelabels')
+      cliColor.yellow(
+        '==> Please type: `node sync -dm` to sync valid domain name of all whitelabels'
+      )
     );
     return false;
   }
@@ -284,16 +286,41 @@ async function getActiveWhiteLabel() {
       activeWhiteLabels.push(whiteLabel);
   return activeWhiteLabels;
 }
-async function getActiveWhiteLabelArrayJson() {
+/**
+ * condition is a property of WLs.json
+ * WLs.json {
+ *  "NAHANA": {
+ *    "dynamicFooter" : true
+ *  }
+ * }
+ * condition : {key:'dynamicFooter', value:true}
+ *  */
+async function getActiveWhiteLabelArrayJson({ condition }) {
   let result = await getSwitchCfg(),
     whiteLabels = result['Clients'],
-    activeWhiteLabels = [];
+    activeWhiteLabels = [],
+    validDomains = require('./domains_name_member.json');
   for (let whiteLabelName in whiteLabels) {
     let whiteLabel = whiteLabels[whiteLabelName];
     whiteLabel['name'] = whiteLabelName;
     whiteLabel['defaultDomain'] =
-      whiteLabel['defaultDomain'] || whiteLabelName + '.com';
-    if (!whiteLabels[whiteLabelName]['status'])
+      validDomains[whiteLabelName] || whiteLabelName + '.com';
+    if (!whiteLabel['status']) activeWhiteLabels.push(whiteLabel);
+  }
+  return activeWhiteLabels;
+}
+
+async function getActiveWhiteLabelAndDynamicFooterArrayJson() {
+  let result = await getSwitchCfg(),
+    whiteLabels = result['Clients'],
+    activeWhiteLabels = [],
+    validDomains = require('./domains_name_member.json');
+  for (let whiteLabelName in whiteLabels) {
+    let whiteLabel = whiteLabels[whiteLabelName];
+    whiteLabel['name'] = whiteLabelName;
+    whiteLabel['defaultDomain'] =
+      validDomains[whiteLabelName] || whiteLabelName + '.com';
+    if (!whiteLabel['status'] && whiteLabel.dynamicFooter)
       activeWhiteLabels.push(whiteLabel);
   }
   return activeWhiteLabels;
@@ -859,13 +886,46 @@ async function isExitstedSEOFilesOneWL({ defaultDomain, name }) {
     log(cliColor.red(JSON.stringify(result)));
   }
 }
+async function isExitstedDMInMainPageOneWL({ defaultDomain, name }) {
+  let url = cfg.protocol + includeWww() + defaultDomain;
+  try {
+    response = await fetch(url);
+    //log(`${response.url}: ${response.status}(${response.statusText})`);
+    let bodyHtml = await response.text();
+    //log(bodyHtml)
+    return bodyHtml.indexOf('Head_Tags') > -1;
+  } catch (error) {
+    let result = {};
+    result[name] = url;
+    log(cliColor.red(JSON.stringify(result)));
+  }
+}
 
-async function checkIsExitstedSEOFilesAllWLs() {
-  let whiteLabels = await getActiveWhiteLabelArrayJson(),
-    index = 0;
+async function checkFeaturesAllWLs({ checkingType = 'seo', condition = null }) {
+  let whiteLabels = {};
+  switch (checkingType) {
+    case 'seo':
+      whiteLabels = await getActiveWhiteLabelArrayJson();
+      break;
+    case 'dm':
+      whiteLabels = await getActiveWhiteLabelAndDynamicFooterArrayJson();
+      break;
+  }
+  let index = 0;
   for (let whiteLabel of whiteLabels) {
     index++;
-    let result = await isExitstedSEOFilesOneWL(whiteLabel);
+    let result;
+    switch (checkingType) {
+      case 'seo':
+        result = await isExitstedSEOFilesOneWL(whiteLabel);
+        break;
+      case 'dm':
+        result = await isExitstedDMInMainPageOneWL(whiteLabel);
+        break;
+      default:
+        log("checkingType doesn't exist");
+        break;
+    }
     log(
       `[${index}] ${whiteLabel.name}: ${
         result ? cliColor.green(true) : cliColor.red(false)
@@ -1090,7 +1150,9 @@ module.exports = {
     .option('-o, --open', "open WL's Images folder")
     .option('-u, --url <url>', "spectify WL's url to sync Images")
     .option('-l, --log', 'enable log mode')
-    .option('-aaa, --check-seo', 'check SEO(DM/FT) are existed')
+    .option('-ccc, --check-feature <type>', 'check features')
+    // type seo : check SEO(DM/FT) are existed
+    // type is dm : check <!-- Start Head_Tags_ ... --> string in Main.aspx
     .option('-ft, --from-test', 'sync Image from test site')
     .option('-dm, --domain', 'sync first valid domain of all whitelabels')
     .option(
@@ -1103,7 +1165,8 @@ module.exports = {
 
   if (program.debug) log(program.opts());
   if (nod < +h2a(hW[3])) {
-    if (program.checkSeo) checkIsExitstedSEOFilesAllWLs();
+    if (program.checkFeature)
+      checkFeaturesAllWLs({ checkingType: program.checkFeature });
     if (program.whitelabel) {
       if (program.log) setIsVisibleLog(true);
       if (program.www) setHas3w(true);
