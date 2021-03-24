@@ -20,7 +20,7 @@ namespace @switch
             if ((EndDate - StartDate).TotalDays <= 187)
             {
                 //switchClientInWebConfig("C:\\switchtool\\web.config", "LIGA888");
-                switchClientInWebConfig(args[0], args[1]);
+                switchClientInWebConfig(args[0], args[1], args[2]);
                 //Console.Write("aaaaaaaaaaaaaaaa");
                 //Console.ReadKey();
             }
@@ -30,7 +30,7 @@ namespace @switch
                 //Console.ReadKey();
             }            
         }
-        static public void switchClientInWebConfig(string pathWebConfig, string switchClientName)
+        static public void switchClientInWebConfig(string pathWebConfig, string switchClientName, string typeProject = "LIGA")
         {
             //var sbResult = new StringBuilder();
             try
@@ -58,11 +58,19 @@ namespace @switch
                     sb.Append(addCompType.ElementAt(0).NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.ToString() + "\n\t");
                     sb.Append(addCompType.ElementAt(0).NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.ToString() + "\n\t");
                     sb.Append(addCompType.ElementAt(0).NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.ToString());
-
-                    for (int i = 0; i < 8; i++)
+                    
+                    if (typeProject != "LIGA")
                     {
-                        addCompType.ElementAt(0).NextNode.Remove();
+                        sb.Append(addCompType.ElementAt(0).NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.ToString() + "\n\t");
+                        sb.Append(addCompType.ElementAt(0).NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.ToString() + "\n\t");
+                        sb.Append(addCompType.ElementAt(0).NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode.ToString());
+                        
                     }
+                    int limitedNumber = 8;
+                    if (typeProject != "LIGA")
+                        limitedNumber = 11;
+                    for (int i = 0; i < limitedNumber; i++)
+                        addCompType.ElementAt(0).NextNode.Remove();
 
                     // Insert <!-- ---> for Current Client
                     addCompType.ElementAt(0).ReplaceWith(new XComment(sb.ToString()));

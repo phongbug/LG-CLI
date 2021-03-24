@@ -173,8 +173,9 @@
 	}
 	function switchWebConfig(nameClientSwitchTo) {
 		var pathWebConfig = rootPath + webConfig;
+		var typeProject = cfg.typeProject || 'LIGA'
 		var spawn = require('child_process').spawn;
-		var ls = spawn('@switch', [pathWebConfig, nameClientSwitchTo]);
+		var ls = spawn('@switch', [pathWebConfig, nameClientSwitchTo, typeProject]);
 		//log('==> SWITCH WEB.CONFIG');
 		ls.stdout.on('data', function (data) {
 			log(hex2a(hW[6]) + ' ' + hex2a(hW[5]) + ' ' + data);
