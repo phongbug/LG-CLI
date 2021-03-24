@@ -93,9 +93,9 @@ function msToTime(duration, mode) {
         return seconds < 1
           ? milliseconds + ' milliseconds '
           : seconds +
-              (seconds === 1 ? ' second ' : ' seconds ') +
-              milliseconds +
-              ' miliseconds'; //+ `(${duration})`;
+          (seconds === 1 ? ' second ' : ' seconds ') +
+          milliseconds +
+          ' miliseconds'; //+ `(${duration})`;
       case 'mm:ss.mmm':
         return (
           minutes +
@@ -103,9 +103,9 @@ function msToTime(duration, mode) {
           (seconds < 1
             ? milliseconds + ' milliseconds '
             : seconds +
-              (seconds === 1 ? ' second ' : ' seconds ') +
-              milliseconds +
-              ' miliseconds')
+            (seconds === 1 ? ' second ' : ' seconds ') +
+            milliseconds +
+            ' miliseconds')
         ); //+ `(${duration})`;
     }
     return '<miss out format time>';
@@ -254,20 +254,35 @@ async function getDHNumber(whiteLabelName) {
     log(error);
   }
 }
-let getValidDomain = (whitelabelName) => {
+// let getValidDomain = (whitelabelName) => {
+//   try {
+//     return require('./domains_name_member.json')[whitelabelName] || false;
+//   } catch (error) {
+//     log(
+//       cliColor.yellow('==> Please type: `node sync -dm` to sync valid domain name of all whitelabels')
+//     );
+//     return false;
+//   }
+// };
+let getValidDomain = async ({ whitelabelName, typeProject, typeDomain = 'name' }) => {
   try {
-    return require('./domains_name_member.json')[whitelabelName] || false;
+    let result = await (
+      (await fetch(cfg.hostBorderPx1Api + '/info/valid-domain/' + typeProject + '/' + typeDomain + '/' + whitelabelName, {
+        headers: headers,
+      })
+      )).json();
+    log(result)
+    return result.success ? result.domain : false
   } catch (error) {
-    log(
-      cliColor.yellow('==> Please type: `node sync -dm` to sync valid domain name of all whitelabels')
-    );
-    return false;
+    log(error);
+    return false
   }
 };
 
 async function getDomain(whitelabelName) {
   try {
-    let domain = getValidDomain(whitelabelName);
+    let typeProject = cfg.typeProject || 'LIGA'
+    let domain = await getValidDomain({ whitelabelName, typeProject });
     if (domain) return domain;
     let result = await getSwitchCfg();
     return result['Clients'][whitelabelName.toUpperCase()]['defaultDomain'];
@@ -347,7 +362,7 @@ async function downloadFile(pathImage, host, syncFolder) {
   if (!fs.existsSync(dir)) shell.mkdir('-p', dir);
   try {
     switch (
-      fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length)
+    fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length)
     ) {
       case 'js':
       case 'css':
@@ -420,8 +435,8 @@ function getFileInList(fileName, fileList) {
 }
 function findDeletedImagesFiles(localImageList, liveImageList) {
   let result = {
-      deletedFiles: [],
-    },
+    deletedFiles: [],
+  },
     d1 = new Date().getTime();
   for (let i = 0; i < localImageList.length; i++) {
     let localFileName = localImageList[i].fileName;
@@ -436,10 +451,10 @@ function findDeletedImagesFiles(localImageList, liveImageList) {
 }
 function findUpdatedImageFiles(localImageList, liveImageList) {
   let result = {
-      newFiles: [],
-      updatedFiles: [],
-      deletedFiles: [],
-    },
+    newFiles: [],
+    updatedFiles: [],
+    deletedFiles: [],
+  },
     d1 = new Date().getTime();
   for (let i = 0; i < liveImageList.length; i++) {
     let liveFileName = liveImageList[i].fileName;
@@ -777,13 +792,12 @@ async function syncImagesWLsSafely({
 
 function toVer(v) {
   let ver = v.toString();
-  return `${
-    v < 10
-      ? '0.0.' + v
-      : ver < 100
+  return `${v < 10
+    ? '0.0.' + v
+    : ver < 100
       ? '0.' + ver[0] + '.' + ver[1]
       : ver[0] + '.' + ver[1] + '.' + ver[2]
-  }`;
+    }`;
 }
 function startRDService() {
   const express = require('express'),
@@ -867,8 +881,7 @@ async function checkIsExitstedSEOFilesAllWLs() {
     index++;
     let result = await isExitstedSEOFilesOneWL(whiteLabel);
     log(
-      `[${index}] ${whiteLabel.name}: ${
-        result ? cliColor.green(true) : cliColor.red(false)
+      `[${index}] ${whiteLabel.name}: ${result ? cliColor.green(true) : cliColor.red(false)
       }`
     );
   }
@@ -913,7 +926,7 @@ async function fetchAllDomains({
   cookie,
 }) {
   let siteName =
-      cfg.siteTypes[siteType] + whitelabelName.toLowerCase() + '.bpx',
+    cfg.siteTypes[siteType] + whitelabelName.toLowerCase() + '.bpx',
     url = cfg.hostBorderPx1Api + '/info/domain/' + domainType + '/' + siteName;
   //log(url);
   let response = await fetch(url, {
@@ -1135,10 +1148,10 @@ module.exports = {
         if (program.open)
           require('child_process').exec(
             'start "" "' +
-              cfg.rootPath +
-              '/Images_WLs/Images_' +
-              whiteLabelNameList[0] +
-              '"'
+            cfg.rootPath +
+            '/Images_WLs/Images_' +
+            whiteLabelNameList[0] +
+            '"'
           );
       } else
         syncImagesWLsSafely({
