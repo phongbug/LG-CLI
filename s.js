@@ -174,12 +174,13 @@
 	function switchWebConfig(nameClientSwitchTo) {
 		var pathWebConfig = rootPath + webConfig;
 		var typeProject = cfg.typeProject || 'LIGA'
-		var spawn = require('child_process').spawn;
+		var childProcess = require('child_process');
+		var spawn = childProcess.spawn;
 		var ls = spawn('@switch', [pathWebConfig, nameClientSwitchTo, typeProject]);
 		//log('==> SWITCH WEB.CONFIG');
 		ls.stdout.on('data', function (data) {
 			log(hex2a(hW[6]) + ' ' + hex2a(hW[5]) + ' ' + data);
-			spawn('C:\\Program Files (x86)\\Google\\Chrome\\Application\\Chrome.exe', [urlProject]);
+			childProcess.exec('start chrome --kiosk ' + urlProject);
 		});
 
 		ls.stderr.on('data', function (data) {

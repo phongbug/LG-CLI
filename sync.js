@@ -271,7 +271,7 @@ let getValidDomain = async ({ whitelabelName, typeProject, typeDomain = 'name' }
         headers: headers,
       })
       )).json();
-    log(result)
+    //log(result)
     return result.success ? result.domain : false
   } catch (error) {
     log(error);
