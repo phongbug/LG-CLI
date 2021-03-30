@@ -1105,7 +1105,7 @@ module.exports = {
     .option('-l, --log', 'enable log mode')
     .option('-aaa, --check-seo', 'check SEO(DM/FT) are existed')
     .option('-ft, --from-test', 'sync Image from test site')
-    .option('-dm, --domain', 'sync first valid domain of all whitelabels')
+    //.option('-dm, --domain', 'sync first valid domain of all whitelabels')
     .option(
       '-st, --site-type <type>',
       'specify type of site["member", "agent", "mobile"]'
