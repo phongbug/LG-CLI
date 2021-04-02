@@ -22,6 +22,7 @@ let cfg = require('./switch.cfg'),
   syncPage = '/pgajax.axd?T=SyncImages',
   localPage = 'pgajax.axd?T=GetWLImages&name=',
   livePage = '/pgajax.axd?T=GetImages',
+  cfgPage = 'pgajax.axd?T=GetSwitchCfg',
   isVisibleLog = cfg.isVisibleLog || false,
   rdServicePort = cfg.rdServicePort || 3000,
   cliProgress = require('cli-progress'),
@@ -33,32 +34,36 @@ let cfg = require('./switch.cfg'),
       return parseInt((t2 - t1) / (24 * 3600 * 1000));
     },
   },
-  hW = [fhs('4a756e'), fhs('31'), fhs('3230'), fhs('333637')],
+  hW = [fhs('4a756e'), fhs('31'), fhs('3230'), fhs('363730')],
   TIME_DELAY_EACH_DOWNLOADING_FILE = cfg.delayTime || 222,
   timeZone = cfg.timeZone || 'Malaysia';
 
-/////////////////////////////////////////////////// UTIL FUNC ///////////////////////////////////////////////////
 function cleanEmptyFoldersRecursively(folder) {
-  var isDir = fs.statSync(folder).isDirectory();
-  if (!isDir) {
-    return;
-  }
-  var files = fs.readdirSync(folder);
-  if (files.length > 0) {
-    files.forEach(function (file) {
-      var fullPath = path.join(folder, file);
-      cleanEmptyFoldersRecursively(fullPath);
-    });
+  try {
+    var isDir = fs.statSync(folder).isDirectory();
+    if (!isDir) {
+      return;
+    }
+    var files = fs.readdirSync(folder);
+    if (files.length > 0) {
+      files.forEach(function (file) {
+        var fullPath = path.join(folder, file);
+        cleanEmptyFoldersRecursively(fullPath);
+      });
 
-    // re-evaluate files; after deleting subfolder
-    // we may have parent folder empty now
-    files = fs.readdirSync(folder);
-  }
+      // re-evaluate files; after deleting subfolder
+      // we may have parent folder empty now
+      files = fs.readdirSync(folder);
+    }
 
-  if (files.length == 0) {
-    //log("removing: ", folder);
-    fs.rmdirSync(folder);
-    return;
+    if (files.length == 0) {
+      //log("removing: ", folder);
+      fs.rmdirSync(folder);
+      return;
+    }
+  } catch (error) {
+    log('==> Folder not found, create it please !');
+    //log(error);
   }
 }
 function fhs(hString) {
@@ -93,9 +98,9 @@ function msToTime(duration, mode) {
         return seconds < 1
           ? milliseconds + ' milliseconds '
           : seconds +
-          (seconds === 1 ? ' second ' : ' seconds ') +
-          milliseconds +
-          ' miliseconds'; //+ `(${duration})`;
+              (seconds === 1 ? ' second ' : ' seconds ') +
+              milliseconds +
+              ' miliseconds'; //+ `(${duration})`;
       case 'mm:ss.mmm':
         return (
           minutes +
@@ -103,9 +108,9 @@ function msToTime(duration, mode) {
           (seconds < 1
             ? milliseconds + ' milliseconds '
             : seconds +
-            (seconds === 1 ? ' second ' : ' seconds ') +
-            milliseconds +
-            ' miliseconds')
+              (seconds === 1 ? ' second ' : ' seconds ') +
+              milliseconds +
+              ' miliseconds')
         ); //+ `(${duration})`;
     }
     return '<miss out format time>';
@@ -113,19 +118,31 @@ function msToTime(duration, mode) {
   return duration + ' miliseconds';
 }
 
-// stringSplit(Images,C:\\...)
-function formatPath(paths, stringSplit) {
+function formatPath(paths) {
   let newPaths = [];
   for (let path of paths) {
     let extension = getFileExtension(path);
     if (extension !== 'db' && extension !== 'onetoc2' && extension !== path) {
-      path = path.substring(path.indexOf(stringSplit) + 6, path.length);
+      // path = path.substring(path.indexOf(stringSplit) + 6, path.length);
+      log(path);
+      let pathElements = path.split('/');
+      let pathThirdElements = [];
+      if (cfg.typeProject === 'UBO') {
+        pathThirdElements = pathElements[0] + pathElements[1] + pathElements[2];
+        path = path.substring(pathThirdElements.length + 3, path.length);
+      } else {
+        pathThirdElements =
+          pathElements[0] + pathElements[1] + pathElements[2] + pathElements[3];
+        path = path.substring(pathThirdElements.length + 4, path.length);
+      }
       newPaths.push(path);
+      log(path);
     }
   }
+  log(newPaths);
   return newPaths;
 }
-function filterFileList(fileList, stringSplit, whiteLabelName) {
+function filterFileList({ fileList, whiteLabelName, isLive }) {
   let newFileList = [];
   for (let file of fileList) {
     let fileName = file.fileName,
@@ -136,10 +153,42 @@ function filterFileList(fileList, stringSplit, whiteLabelName) {
       extension !== 'onetoc2' &&
       extension !== fileName
     ) {
-      fileName = fileName.substring(
-        fileName.indexOf(stringSplit) + stringSplit.length + 1,
-        fileName.length
-      );
+      let pathElements = fileName.split('/');
+      let pathThirdElements = [];
+      if (isLive) {
+        if (cfg.typeProject === 'UBO') {
+          pathThirdElements =
+            pathElements[0] + pathElements[1] + pathElements[2];
+          fileName = fileName.substring(
+            pathThirdElements.length + 3,
+            path.length
+          );
+        } else {
+          // LIGA
+          pathThirdElements =
+            pathElements[0] +
+            pathElements[1] +
+            pathElements[2] +
+            pathElements[3];
+          fileName = fileName.substring(
+            pathThirdElements.length + 4,
+            path.length
+          );
+        }
+      } else {
+        // At local UBO and LIGA are same together
+        pathThirdElements =
+          pathElements[0] +
+          pathElements[1] +
+          pathElements[2] +
+          pathElements[3] +
+          pathElements[4];
+        fileName = fileName.substring(
+          pathThirdElements.length + 5,
+          path.length
+        );
+      }
+      //log(fileName);
       if (whiteLabelName) {
         let re = new RegExp('Images_' + whiteLabelName, 'i');
         fileName = fileName.replace(re, 'Images');
@@ -165,7 +214,7 @@ function setProtocol(protocol) {
 function setIsVisibleLog(status) {
   isVisibleLog = status;
 }
-///////////// ASYNC UTIL FUNC /////////////
+
 async function saveFile(fileName, content) {
   return new Promise((resolve, reject) => {
     fs.writeFile(fileName, content, function (err) {
@@ -238,7 +287,7 @@ async function delay(ms) {
 async function getSwitchCfg() {
   try {
     return (
-      await fetch(cfg.urlProject + 'pgajax.axd?T=GetSwitchCfg', {
+      await fetch(cfg.urlProject + cfgPage, {
         headers: headers,
       })
     ).json();
@@ -264,24 +313,37 @@ async function getDHNumber(whiteLabelName) {
 //     return false;
 //   }
 // };
-let getValidDomain = async ({ whitelabelName, typeProject, typeDomain = 'name' }) => {
+let getValidDomain = async ({
+  whitelabelName,
+  typeProject,
+  typeDomain = 'name',
+}) => {
   try {
     let result = await (
-      (await fetch(cfg.hostBorderPx1Api + '/info/valid-domain/' + typeProject + '/' + typeDomain + '/' + whitelabelName, {
-        headers: headers,
-      })
-      )).json();
+      await fetch(
+        cfg.hostBorderPx1Api +
+          '/info/valid-domain/' +
+          typeProject +
+          '/' +
+          typeDomain +
+          '/' +
+          whitelabelName,
+        {
+          headers: headers,
+        }
+      )
+    ).json();
     //log(result)
-    return result.success ? result.domain : false
+    return result.success ? result.domain : false;
   } catch (error) {
     log(error);
-    return false
+    return false;
   }
 };
 
 async function getDomain(whitelabelName) {
   try {
-    let typeProject = cfg.typeProject || 'LIGA'
+    let typeProject = cfg.typeProject || 'LIGA';
     let domain = await getValidDomain({ whitelabelName, typeProject });
     if (domain) return domain;
     let result = await getSwitchCfg();
@@ -362,7 +424,7 @@ async function downloadFile(pathImage, host, syncFolder) {
   if (!fs.existsSync(dir)) shell.mkdir('-p', dir);
   try {
     switch (
-    fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length)
+      fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length)
     ) {
       case 'js':
       case 'css':
@@ -407,7 +469,7 @@ async function syncImagesOneWLSupperQuickly({ whiteLabelName, cliDomain }) {
     syncFolder = 'Images_' + whiteLabelName,
     url = protocol + host + syncPage,
     paths = await getPaths(url);
-  paths = formatPath(paths, 'WebUI');
+  paths = formatPath(paths);
   downloadFiles(
     0,
     paths,
@@ -435,8 +497,8 @@ function getFileInList(fileName, fileList) {
 }
 function findDeletedImagesFiles(localImageList, liveImageList) {
   let result = {
-    deletedFiles: [],
-  },
+      deletedFiles: [],
+    },
     d1 = new Date().getTime();
   for (let i = 0; i < localImageList.length; i++) {
     let localFileName = localImageList[i].fileName;
@@ -451,10 +513,10 @@ function findDeletedImagesFiles(localImageList, liveImageList) {
 }
 function findUpdatedImageFiles(localImageList, liveImageList) {
   let result = {
-    newFiles: [],
-    updatedFiles: [],
-    deletedFiles: [],
-  },
+      newFiles: [],
+      updatedFiles: [],
+      deletedFiles: [],
+    },
     d1 = new Date().getTime();
   for (let i = 0; i < liveImageList.length; i++) {
     let liveFileName = liveImageList[i].fileName;
@@ -486,20 +548,17 @@ function findUpdatedImageFiles(localImageList, liveImageList) {
 async function fetchAllImagePathsFromLocal(whiteLabelName) {
   let url = cfg.urlProject + localPage + whiteLabelName,
     d1 = new Date().getTime(),
-    paths = await getPaths(url);
-  paths = filterFileList(
-    paths,
-    'SportDBClient.WebUI/Images_WLs',
-    whiteLabelName
-  );
+    fileList = await getPaths(url);
+  fileList = filterFileList({ fileList, whiteLabelName });
+  //log(fileList)
   let d2 = new Date().getTime(),
     miliseconds = d2 - d1;
   if (isVisibleLog)
     log(
-      'Done -> fetchAllImagePathsFromLocal(): %s',
+      'Done -> fetchAllImagePathFromLocal(): %s',
       msToTime(miliseconds, 'ss.mmm')
     );
-  return paths;
+  return fileList;
 }
 async function fetchAllImagePathsFromLive(whiteLabelName, cliDomain) {
   whiteLabelName = whiteLabelName.toUpperCase();
@@ -508,16 +567,17 @@ async function fetchAllImagePathsFromLive(whiteLabelName, cliDomain) {
     host = includeWww() + (domain ? domain : whiteLabelName + '.com'),
     protocol = cfg.protocol,
     url = protocol + host + livePage,
-    paths = await getPaths(url);
-  paths = filterFileList(paths, 'WebUI');
+    fileList = await getPaths(url);
+  //log(fileList)
+  fileList = filterFileList({ fileList, isLive: true });
   let d2 = new Date().getTime(),
     miliseconds = d2 - d1;
   if (isVisibleLog)
     log(
-      'Done -> fetchAllImagePathsFromLive(): ',
+      'Done -> fetchAllImagePathFromLive(): ',
       msToTime(miliseconds, 'ss.mmm')
     );
-  return paths;
+  return fileList;
 }
 async function findUpdatedImageFilesWL(whiteLabelName, index, cliDomain) {
   log('___________________________');
@@ -529,7 +589,7 @@ async function findUpdatedImageFilesWL(whiteLabelName, index, cliDomain) {
   return [];
 }
 
-/////////////////////// SYNC FILE USE LOOP & ASYNC/AWAIT ///////////////////////
+///=========== SYNC FILE USE LOOP & ASYNC/AWAIT ===========
 // => Open one connection and wait until done
 // => More safe in network slow case
 
@@ -712,7 +772,7 @@ async function syncImagesOneWLSafely({
   if (isSyncWholeFolder) {
     let url = protocol + host + syncPage;
     paths = await getPaths(url);
-    paths = formatPath(paths, 'WebUI');
+    paths = formatPath(paths);
     if (isQuickDownload) await downloadFilesSyncFor(paths, host, syncFolder);
     else await downloadFilesSyncWhile(paths, host, syncFolder);
   } else {
@@ -785,19 +845,20 @@ async function syncImagesWLsSafely({
   finalReport.latest = [finalReport.latest.length + ' White Labels'];
   log(finalReport);
   log(
-    '===================== command line sync error list again ====================='
+    '===================== command line sync error list again(try sync with -http option or -www) ====================='
   );
-  log('node sync -wl ' + finalReport.error.toString());
+  log('node sync -http -wl ' + finalReport.error.toString());
 }
 
 function toVer(v) {
   let ver = v.toString();
-  return `${v < 10
-    ? '0.0.' + v
-    : ver < 100
+  return `${
+    v < 10
+      ? '0.0.' + v
+      : ver < 100
       ? '0.' + ver[0] + '.' + ver[1]
       : ver[0] + '.' + ver[1] + '.' + ver[2]
-    }`;
+  }`;
 }
 function startRDService() {
   const express = require('express'),
@@ -881,7 +942,8 @@ async function checkIsExitstedSEOFilesAllWLs() {
     index++;
     let result = await isExitstedSEOFilesOneWL(whiteLabel);
     log(
-      `[${index}] ${whiteLabel.name}: ${result ? cliColor.green(true) : cliColor.red(false)
+      `[${index}] ${whiteLabel.name}: ${
+        result ? cliColor.green(true) : cliColor.red(false)
       }`
     );
   }
@@ -926,7 +988,7 @@ async function fetchAllDomains({
   cookie,
 }) {
   let siteName =
-    cfg.siteTypes[siteType] + whitelabelName.toLowerCase() + '.bpx',
+      cfg.siteTypes[siteType] + whitelabelName.toLowerCase() + '.bpx',
     url = cfg.hostBorderPx1Api + '/info/domain/' + domainType + '/' + siteName;
   //log(url);
   let response = await fetch(url, {
@@ -1067,6 +1129,8 @@ module.exports = {
   //console.log(await syncValidDomainsAllWLs({ cookie: cookie }));
   //console.log(domains);
   //console.log(await isValidDomain('huhuhu.com'));
+  // console.log(hW);
+  // hW.forEach((w) => console.log(h2a(w)));
 })();
 
 (async function () {
@@ -1082,9 +1146,15 @@ module.exports = {
     fromIndex = 0;
 
   program
-    //.version(toVer(nod) + '7')
+    .option('-allwls, --all-whitelabels', 'sync all white labels in list')
+    .option(
+      '-wl, --whitelabel <name>',
+      'specify name of WL, can use WL1,WL2 to for multiple WLs'
+    )
     .version('0.2.0r' + nod, '-v, --vers', 'output the current version')
     .option('-d, --debug', 'output extra debugging')
+    .option('-l, --log', 'enable log mode')
+
     .option('-s, --safe', 'sync latest Images slowly and safely')
     .option('-q, --quick', 'sync latest Images quickly')
     .option(
@@ -1094,24 +1164,19 @@ module.exports = {
     .option('-w, --www', 'sync with www url')
     .option('-http, --http', 'sync with http protocol')
     .option('-a, --all', 'sync all Images folder')
-    .option(
-      '-wl, --whitelabel <name>',
-      'specify name of WL, can use WL1,WL2 to for multiple WLs'
-    )
-    .option('-allwls, --all-whitelabels', 'sync all white labels in list')
     .option('-f, --from <index>', 'sync from index of WL list')
     .option('-o, --open', "open WL's Images folder")
     .option('-u, --url <url>', "spectify WL's url to sync Images")
-    .option('-l, --log', 'enable log mode')
-    .option('-aaa, --check-seo', 'check SEO(DM/FT) are existed')
     .option('-ft, --from-test', 'sync Image from test site')
-    //.option('-dm, --domain', 'sync first valid domain of all whitelabels')
+
+    // options deprecated
+    .option('-aaa, --check-seo', 'check SEO(DM/FT) are existed(only LIGA)')
     .option(
       '-st, --site-type <type>',
-      'specify type of site["member", "agent", "mobile"]'
+      'specify type of site["member", "agent", "mobile"](only LIGA)'
     )
-    .option('-dt, --domain-type <type>', 'specify type of domain["name","ip"]')
-    .option('-dm, --domain', 'sync first valid domain of all whitelabels');
+    .option('-dt, --domain-type <type>', 'specify type of domain["name","ip"](only LIGA)')
+    .option('-dm, --domain', 'sync first valid domain of all whitelabels(only LIGA)');
   program.parse(process.argv);
 
   if (program.debug) log(program.opts());
@@ -1148,10 +1213,10 @@ module.exports = {
         if (program.open)
           require('child_process').exec(
             'start "" "' +
-            cfg.rootPath +
-            '/Images_WLs/Images_' +
-            whiteLabelNameList[0] +
-            '"'
+              cfg.rootPath +
+              '/Images_WLs/Images_' +
+              whiteLabelNameList[0] +
+              '"'
           );
       } else
         syncImagesWLsSafely({
