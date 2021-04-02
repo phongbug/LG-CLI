@@ -1,4 +1,7 @@
-﻿# liga-sync
+﻿# ubo-sync
+
+- Use to border ubo together
+- Use password/user/url ubo this project
 
 ## CLI arguments
 
