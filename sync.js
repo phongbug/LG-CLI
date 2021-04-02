@@ -1077,7 +1077,42 @@ async function syncValidDomainsAllWLs({
     );
     await delay(500);
   }
+  await updateValidDomains({ validDomains });
   return validDomains;
+}
+async function fetchValidDomainOneWL({
+  siteType = 'member',
+  domainType = 'name',
+  cookie,
+  whitelabelName,
+}) {
+  let validDomain = await fetchValidDomain({
+    whitelabelName,
+    siteType,
+    domainType,
+    cookie,
+  });
+  log(
+    '==> Valid domain:',
+    cliColor.green(validDomain[whitelabelName.toLowerCase()])
+  );
+}
+
+async function updateValidDomains({ validDomains, domainType = 'name' }) {
+  let url =
+    cfg.hostBorderPx1Api +
+    '/info/valid-domain/' +
+    cfg.typeProject +
+    '/' +
+    domainType;
+  //log(url);
+  let response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domains: JSON.stringify(validDomains) }),
+  });
+  let result = await response.text();
+  log(result);
 }
 // =========================== Export Part ===========================
 module.exports = {
@@ -1175,8 +1210,18 @@ module.exports = {
       '-st, --site-type <type>',
       'specify type of site["member", "agent", "mobile"](only LIGA)'
     )
-    .option('-dt, --domain-type <type>', 'specify type of domain["name","ip"](only LIGA)')
-    .option('-dm, --domain', 'sync first valid domain of all whitelabels(only LIGA)');
+    .option(
+      '-dt, --domain-type <type>',
+      'specify type of domain["name","ip"](only LIGA)'
+    )
+    .option(
+      '-dm, --domain <name>',
+      'sync first valid domain of specify name of WL, can use WL1,WL2 to for multiple WLs'
+    )
+    .option(
+      '-alldm, --all-domain',
+      'sync first valid domain of all white labels'
+    );
   program.parse(process.argv);
 
   if (program.debug) log(program.opts());
@@ -1233,8 +1278,27 @@ module.exports = {
       // white sync all active wls
       let siteType = program['siteType'],
         domainType = program['domainType'],
-        cookie;
-      cookie = await (await aunthenticate()).cookie;
+        cookie = await (await aunthenticate()).cookie;
+      if (program.log) setIsVisibleLog(true);
+      if (program.www) setHas3w(true);
+      if (program.http) setProtocol('http://');
+      let whiteLabelNameList = program.domain.split(',');
+      //if (whiteLabelNameList.length > 1) fromIndex = program.from;
+      if (whiteLabelNameList.length === 1) {
+        let whitelabelName = whiteLabelNameList[0];
+        // Only show info
+        await fetchValidDomainOneWL({
+          siteType,
+          domainType,
+          cookie,
+          whitelabelName,
+        });
+      }
+      // Write to json file
+    } else if (program.allDomain) {
+      let siteType = program['siteType'],
+        domainType = program['domainType'],
+        cookie = await (await aunthenticate()).cookie;
       await syncValidDomainsAllWLs({ siteType, domainType, cookie });
     }
     sync['startRDService'] = startRDService;
