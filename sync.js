@@ -759,7 +759,7 @@ async function syncImagesOneWLSafely({
   isQuickDownload,
 }) {
   whiteLabelName = whiteLabelName.toUpperCase().trim();
-  let status = 1;
+  let result = { status: 1 };
   if ((await getDHNumber(whiteLabelName)) === undefined) {
     log("White label %s don't exist", whiteLabelName);
     return;
@@ -783,14 +783,14 @@ async function syncImagesOneWLSafely({
     );
     if (fileList.length === 0) {
       log(cliColor.red('X Has some errors !'));
-      status = 3;
+      result = { status: 3 };
     } else {
       log(fileList);
       paths = [...fileList.newFiles, ...fileList.updatedFiles];
       if (fileList.deletedFiles && fileList.deletedFiles.length > 0)
         deleteFiles(fileList.deletedFiles, whiteLabelName);
       if (paths.length > 0) {
-        status = 2;
+        result = { status: 2, fileList: fileList };
         if (isQuickDownload)
           await downloadFilesSyncFor(paths, host, syncFolder);
         else await downloadFilesSyncWhile(paths, host, syncFolder);
@@ -800,7 +800,7 @@ async function syncImagesOneWLSafely({
   cleanEmptyFoldersRecursively(
     cfg.rootFolderImages + 'Images_WLs\\' + syncFolder
   );
-  return status;
+  return result;
 }
 async function syncImagesWLsSafely({
   whiteLabelNameList,
@@ -821,18 +821,20 @@ async function syncImagesWLsSafely({
   for (let whiteLabelName of whiteLabelNameList) {
     whiteLabelName = whiteLabelName.toUpperCase();
     if (index >= fromIndex) {
-      let isSuccessSync = await syncImagesOneWLSafely({
+      let result = await syncImagesOneWLSafely({
         whiteLabelName,
         isSyncWholeFolder,
         index,
         isQuickDownload,
       });
-      switch (isSuccessSync) {
+      switch (result.status) {
         case 1:
           finalReport.latest.push(whiteLabelName);
           break;
         case 2:
-          finalReport.changed.push(whiteLabelName);
+          let wlResult = {};
+          wlResult[whiteLabelName] = result.fileList;
+          finalReport.changed.push(wlResult);
           break;
         case 3:
           finalReport.error.push(whiteLabelName);
@@ -843,11 +845,28 @@ async function syncImagesWLsSafely({
   }
   log('===================== Final Report =====================');
   finalReport.latest = [finalReport.latest.length + ' White Labels'];
-  log(finalReport);
+  log('Total: %s', cliColor.green(finalReport.total));
+  log('Latest: %s', cliColor.green(finalReport.latest));
+  log('Changed:');
+  finalReport.changed.push({
+    BOLA168: {
+      newFiles: ['Images/theme/v1/js/.DS_Store'],
+      updatedFiles: [],
+      deletedFiles: [],
+    },
+  });
+  //log(JSON.stringify(finalReport.changed, null, 3));
+  finalReport.changed.forEach((wl) => log(wl));
   log(
-    '===================== command line sync error list again(try sync with -http option or -www) ====================='
+    'Error: %s',
+    cliColor.red(finalReport.error.length == 0 ? '[]' : finalReport.error)
   );
-  log('node sync -http -wl ' + finalReport.error.toString());
+  if (finalReport.error.length > 0) {
+    log(
+      '===================== command line sync error list again(try sync with -http option or -www) ====================='
+    );
+    log('node sync -http -wl ' + finalReport.error.toString());
+  }
 }
 
 function toVer(v) {
@@ -1025,6 +1044,7 @@ async function isValidDomain(domain, siteType = 'member') {
 async function findFristValidDomain(domains) {
   for (let i = 0; i < domains.length; i++) {
     let domain = domains[i];
+    log(domain);
     let isValid = await isValidDomain(domain);
     if (isValid) return domain;
   }
