@@ -848,13 +848,13 @@ async function syncImagesWLsSafely({
   log('Total: %s', cliColor.green(finalReport.total));
   log('Latest: %s', cliColor.green(finalReport.latest));
   log('Changed:');
-  finalReport.changed.push({
-    BOLA168: {
-      newFiles: ['Images/theme/v1/js/.DS_Store'],
-      updatedFiles: [],
-      deletedFiles: [],
-    },
-  });
+  // finalReport.changed.push({
+  //   BOLA168: {
+  //     newFiles: ['Images/theme/v1/js/.DS_Store'],
+  //     updatedFiles: [],
+  //     deletedFiles: [],
+  //   },
+  // });
   //log(JSON.stringify(finalReport.changed, null, 3));
   finalReport.changed.forEach((wl) => log(wl));
   log(
@@ -1070,14 +1070,14 @@ async function fetchValidDomain({
   return result;
 }
 async function syncValidDomainsAllWLs({
+  whiteLabelNameList,
   siteType = 'member',
   domainType = 'name',
   cookie,
 }) {
-  let validDomains = {},
-    wlList = await getActiveWhiteLabel();
-  for (let i = 0; i < wlList.length; i++) {
-    let whitelabelName = wlList[i];
+  let validDomains = {};
+  for (let i = 0; i < whiteLabelNameList.length; i++) {
+    let whitelabelName = whiteLabelNameList[i];
     //log(whitelabelName);
     let validDomain = await fetchValidDomain({
       whitelabelName,
@@ -1126,6 +1126,7 @@ async function updateValidDomains({ validDomains, domainType = 'name' }) {
     '/' +
     domainType;
   //log(url);
+  log(validDomains)
   let response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1313,13 +1314,25 @@ module.exports = {
           cookie,
           whitelabelName,
         });
-      }
+      } else
+        await syncValidDomainsAllWLs({
+          whiteLabelNameList,
+          siteType,
+          domainType,
+          cookie,
+        });
       // Write to json file
     } else if (program.allDomain) {
       let siteType = program['siteType'],
         domainType = program['domainType'],
-        cookie = await (await aunthenticate()).cookie;
-      await syncValidDomainsAllWLs({ siteType, domainType, cookie });
+        cookie = await (await aunthenticate()).cookie,
+        whiteLabelNameList = await getActiveWhiteLabel();
+      await syncValidDomainsAllWLs({
+        whiteLabelNameList,
+        siteType,
+        domainType,
+        cookie,
+      });
     }
     sync['startRDService'] = startRDService;
     sync['importRDCli'] = importRDCli;
