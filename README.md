@@ -20,6 +20,15 @@
         -l, --log            show log info
         -u, --url            sync with specific domain (only using for one WL and must use with -all option together)
         -ft, --from-test           sync Image from test site
+---------------
+-dmallwls, --domain-all-wls  sync valid domain of all WLs
+-dm, --domain <name>  specify name of WL, can use WL1,WL2 to for multiple WLs
+    - Sub options of -dm <name>:
+        -dt, --domain-type   sync with domain type, value is "ip" or "name"(as default)
+        -st, --site-type     sync with site type, value is "member"(as default), "mobile", "agent"
+        -w, --www            sync with www url
+        -http, --http',      sync with http protocol
+        -l, --log            show log info
 ```
 
 ## Common statements
@@ -78,14 +87,18 @@ node sync -wl BANANA --test --log -o
 
 ***All notable changes to this project will be documented in this part.***
 
-## [0.2.0r214]
+## [0.3.0r309]
 
 ### Added
 
+- Add update valid domains to global feature
+
 - Sync domain name of all whitelabel of member, agent, mobile
-  - member `node sync -dm` -> `domains_name_member.json`
-  - agent `node sync -dm -st agent` -> `domains_name_agent.json`
-  - mobile `node sync -dm -st mobile` -> `domains_name_mobile.json`
+  - member `node sync -dm <name>` -> sync valid domain one/many whitelabel, name is "HAHAHA" "or HAHAHA, HABANA", file will be saved at  `domains_name_member.json` and update to global valid domains memory
+  - member `node sync -dmallwls` -> sync valid domains all whitelabels save to `domains_name_member.json` and update to global valid domains memory
+
+  - agent `node sync -dm habana -st agent` ->  sync valid domain of agent site
+  - mobile `node sync -dm bungata -st mobile` -> sync valid domain of mobile site
 
 ## [0.1.1r185]
 

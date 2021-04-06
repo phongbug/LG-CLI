@@ -1240,7 +1240,7 @@ module.exports = {
       'sync first valid domain of specify name of WL, can use WL1,WL2 to for multiple WLs'
     )
     .option(
-      '-alldm, --all-domain',
+      '-dmallwls, --domain-all-wls',
       'sync first valid domain of all white labels'
     );
   program.parse(process.argv);
@@ -1322,7 +1322,7 @@ module.exports = {
           cookie,
         });
       // Write to json file
-    } else if (program.allDomain) {
+    } else if (program.domainAllWls) {
       let siteType = program['siteType'],
         domainType = program['domainType'],
         cookie = await (await aunthenticate()).cookie,
