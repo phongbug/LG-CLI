@@ -24,11 +24,13 @@
 -dmallwls, --domain-all-wls  sync valid domain of all WLs
 -dm, --domain <name>  specify name of WL, can use WL1,WL2 to for multiple WLs
     - Sub options of -dm <name>:
-        -dt, --domain-type   sync with domain type, value is "ip" or "name"(as default)
-        -st, --site-type     sync with site type, value is "member"(as default), "mobile", "agent"
-        -w, --www            sync with www url
-        -http, --http',      sync with http protocol
-        -l, --log            show log info
+        -dt, --domain-type     sync with domain type, value is "ip" or "name"(as default)
+        -st, --site-type       sync with site type, value is "member"(as default), "mobile", "agent"
+        -w, --www              sync with www url
+        -http, --http',        sync with http protocol
+        -l, --log              show log info
+        -list, --list-domain   only show domains info
+        -ud <domain>, --update-domain  update valid domain by manual specific domain
 ```
 
 ## Common statements
@@ -86,7 +88,12 @@ node sync -wl BANANA --test --log -o
 ## Change log
 
 ***All notable changes to this project will be documented in this part.***
+## [0.3.0r316]
 
+### Added
+
+- Add `-ud` option: update valid domain by manual specific domain
+- Add `-list` option: only show valid domains, don't update to global
 ## [0.3.0r309]
 
 ### Added

@@ -1112,10 +1112,11 @@ async function fetchValidDomainOneWL({
     domainType,
     cookie,
   });
-  log(
-    '==> Valid domain:',
-    cliColor.green(validDomain[whitelabelName.toLowerCase()])
-  );
+  // log(
+  //   '==> Valid domain:',
+  //   cliColor.green(validDomain[whitelabelName.toLowerCase()])
+  // );
+  return validDomain;
 }
 
 async function updateValidDomains({ validDomains, domainType = 'name' }) {
@@ -1126,7 +1127,7 @@ async function updateValidDomains({ validDomains, domainType = 'name' }) {
     '/' +
     domainType;
   //log(url);
-  log(validDomains)
+  log(validDomains);
   let response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1207,7 +1208,7 @@ module.exports = {
       '-wl, --whitelabel <name>',
       'specify name of WL, can use WL1,WL2 to for multiple WLs'
     )
-    .version('0.2.0r' + nod, '-v, --vers', 'output the current version')
+    .version('0.3.0r' + nod, '-v, --vers', 'output the current version')
     .option('-d, --debug', 'output extra debugging')
     .option('-l, --log', 'enable log mode')
 
@@ -1242,6 +1243,12 @@ module.exports = {
     .option(
       '-dmallwls, --domain-all-wls',
       'sync first valid domain of all white labels'
+    ).option(
+      '-ud, --update-domain <domain>',
+      'update valid domain by manual specific domain'
+    ).option(
+      '-list, --list-domain',
+      'only list domain not update'
     );
   program.parse(process.argv);
 
@@ -1306,14 +1313,18 @@ module.exports = {
       let whiteLabelNameList = program.domain.split(',');
       //if (whiteLabelNameList.length > 1) fromIndex = program.from;
       if (whiteLabelNameList.length === 1) {
-        let whitelabelName = whiteLabelNameList[0];
-        // Only show info
-        await fetchValidDomainOneWL({
-          siteType,
-          domainType,
-          cookie,
-          whitelabelName,
-        });
+        let whitelabelName = whiteLabelNameList[0].toUpperCase();
+        let validDomains = {};
+        if (program.updateDomain) {
+          validDomains[whitelabelName] = program.updateDomain;
+        } else
+          validDomains = await fetchValidDomainOneWL({
+            siteType,
+            domainType,
+            cookie,
+            whitelabelName,
+          });
+        if(!program.listDomain) await updateValidDomains({ validDomains });
       } else
         await syncValidDomainsAllWLs({
           whiteLabelNameList,
