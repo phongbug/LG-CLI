@@ -8,7 +8,7 @@
 -h, --help                display help for command  
 -allwls, --all-whitelabels  sync all Images in WL list
 -wl, --whitelabel <name>  specify name of WL, can use WL1,WL2 to for multiple WLs
-    - Sub options of -wl <name>:
+    - Sub options :
         -s, --safe           sync latest Images slowly and safely
         -q, --quick          sync latest Images quickly(is default)
         -sq, --supper-quick  sync latest Images supper quickly (Recommeded using for one WL)
@@ -23,7 +23,7 @@
 ---------------
 -dmallwls, --domain-all-wls  sync valid domain of all WLs
 -dm, --domain <name>  specify name of WL, can use WL1,WL2 to for multiple WLs
-    - Sub options of -dm <name>:
+    - Sub options :
         -dt, --domain-type     sync with domain type, value is "ip" or "name"(as default)
         -st, --site-type       sync with site type, value is "member"(as default), "mobile", "agent"
         -w, --www              sync with www url
@@ -31,6 +31,11 @@
         -l, --log              show log info
         -list, --list-domain   only show domains info
         -ud <domain>, --update-domain  update valid domain by manual specific domain
+-----------------
+ -sf, --server-files <whitelabelnames>   sync server files first valid domain of specify name of WL, can use WL1,WL2 to for multiple WLs
+    - Sub options :
+        -fe, --file-extension <extension>    specify file extension, default is "aspx"
+        -fp, --folder-path <path>            specify folder path to get file list, default is "/"
 ```
 
 ## Common statements
@@ -88,12 +93,21 @@ node sync -wl BANANA --test --log -o
 ## Change log
 
 ***All notable changes to this project will be documented in this part.***
+## [0.4.0r323]
+
+### Added
+
+ `-sf, --server-files <whitelabelnames>`   sync server files first valid domain of specify name of WL, can use WL1,WL2 to for multiple WLs
+    - Sub options
+        `-fe, --file-extension <extension>`    specify file extension, default is "aspx"
+        `-fp, --folder-path <path>`            specify folder path to get file list, default is "/"
 ## [0.3.0r316]
 
 ### Added
 
 - Add `-ud` option: update valid domain by manual specific domain
 - Add `-list` option: only show valid domains, don't update to global
+
 ## [0.3.0r309]
 
 ### Added
@@ -101,11 +115,11 @@ node sync -wl BANANA --test --log -o
 - Add update valid domains to global feature
 
 - Sync domain name of all whitelabel of member, agent, mobile
-  - member `node sync -dm <name>` -> sync valid domain one/many whitelabel, name is "HAHAHA" "or HAHAHA, HABANA", file will be saved at  `domains_name_member.json` and update to global valid domains memory
-  - member `node sync -dmallwls` -> sync valid domains all whitelabels save to `domains_name_member.json` and update to global valid domains memory
+- member `node sync -dm <name>` -> sync valid domain one/many whitelabel, name is "HAHAHA" "or HAHAHA, HABANA", file will be saved at  `domains_name_member.json` and update to global valid domains memory
+- member `node sync -dmallwls` -> sync valid domains all whitelabels save to `domains_name_member.json` and update to global valid domains memory
 
-  - agent `node sync -dm habana -st agent` ->  sync valid domain of agent site
-  - mobile `node sync -dm bungata -st mobile` -> sync valid domain of mobile site
+- agent `node sync -dm habana -st agent` ->  sync valid domain of agent site
+- mobile `node sync -dm bungata -st mobile` -> sync valid domain of mobile site
 
 ## [0.1.1r185]
 

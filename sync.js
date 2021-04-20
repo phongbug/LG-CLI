@@ -22,7 +22,9 @@ let cfg = require('./switch.cfg'),
   syncPage = '/pgajax.axd?T=SyncImages',
   localPage = 'pgajax.axd?T=GetWLImages&name=',
   livePage = '/pgajax.axd?T=GetImages',
-  cfgPage = 'pgajax.axd?T=GetSwitchCfg',
+  cfgPage = '/pgajax.axd?T=GetSwitchCfg',
+  fetchFilesNamePage = '/pgajax.axd?T=GetFilesName',
+  fetchFilePage = '/pgajax.axd?T=GetFileContent',
   isVisibleLog = cfg.isVisibleLog || false,
   rdServicePort = cfg.rdServicePort || 3000,
   cliProgress = require('cli-progress'),
@@ -844,10 +846,19 @@ async function syncImagesWLsSafely({
     index = index + 1;
   }
   log('===================== Final Report =====================');
-  finalReport.latest = [finalReport.latest.length + ' White Labels'];
+  let latestWLQuantity = finalReport.latest.length;
+  finalReport.latest = [
+    latestWLQuantity + ' White Label' + (latestWLQuantity <= 1 ? '' : 's'),
+  ];
   log('Total: %s', cliColor.green(finalReport.total));
   log('Latest: %s', cliColor.green(finalReport.latest));
-  log('Changed:');
+  let changedWLQuantity = finalReport.changed.length;
+  log(
+    'Changed: %s',
+    cliColor.green(
+      changedWLQuantity + ' White Label' + (changedWLQuantity <= 1 ? '' : 's')
+    )
+  );
   // finalReport.changed.push({
   //   BOLA168: {
   //     newFiles: ['Images/theme/v1/js/.DS_Store'],
@@ -1136,6 +1147,101 @@ async function updateValidDomains({ validDomains, domainType = 'name' }) {
   let result = await response.text();
   log(result);
 }
+
+async function fetchFilesName({ whitelabelUrl, fileExtension, folderPath }) {
+  let url =
+    whitelabelUrl +
+    fetchFilesNamePage +
+    '&' +
+    new URLSearchParams({ fileExtension, folderPath });
+  log(url);
+  let response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  let result = (await response.text()).replace(/\\/g, '\\\\');
+  result = JSON.parse(result);
+  //log(result);
+  return result;
+}
+async function fetchFile({ whitelabelUrl, fullFileName, token }) {
+  let url =
+    whitelabelUrl +
+    fetchFilePage +
+    '&' +
+    new URLSearchParams({ fileName: fullFileName, token });
+  //log(url);
+  let response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Content-Type': 'text/plain' },
+  });
+  let fileContent = await response.text();
+  saveServerFile({ fullFileName, fileContent });
+}
+
+function covertFullFileNameFromLiveToLocal(fullFileName) {
+  return cfg.diskLabelLocal + fullFileName.substring(3, fullFileName.length);
+}
+function saveServerFile({ fullFileName, fileContent }) {
+  fullFileName = covertFullFileNameFromLiveToLocal(fullFileName);
+  //let fileName = fullFileName.split('\\').slice(-1)[0],
+  let dirName = fullFileName.substring(0, fullFileName.lastIndexOf('\\'));
+  if (!fs.existsSync(dirName)) shell.mkdir('-p', dirName);
+  saveFile(fullFileName, fileContent);
+}
+
+async function syncServerFilesOneWL({
+  whitelabelName,
+  fileExtension,
+  folderPath,
+}) {
+  let token = cfg.token;
+  whitelabelName = whitelabelName.toUpperCase();
+  let typeProject = cfg.typeProject;
+  let whitelabelUrl =
+    cfg.protocol +
+    includeWww() +
+    (await getValidDomain({ whitelabelName, typeProject }));
+  let listFiles = await fetchFilesName({
+    whitelabelUrl,
+    fileExtension,
+    folderPath,
+  });
+  //log(listFiles);
+  log('listFiles.length = %s', listFiles.length);
+  let index = 0;
+  for (file of listFiles) {
+    index++;
+    log(`[${index}/${listFiles.length}]: ${file.fileName}`);
+    let fullFileName = file.fileName;
+    let fullFileNameLocal = covertFullFileNameFromLiveToLocal(fullFileName);
+    if (fs.existsSync(fullFileNameLocal)) {
+      var stats = fs.statSync(fullFileNameLocal);
+      if (stats.size <= 20) {
+        await fetchFile({ whitelabelUrl, fullFileName, token });
+        await delay(111);
+      }
+    } else {
+      await fetchFile({ whitelabelUrl, fullFileName, token });
+      await delay(222);
+    }
+  }
+}
+async function syncServerFilesWLs({
+  whitelabelNames,
+  fileExtension,
+  folderPath,
+}) {
+  for (whitelabelName of whitelabelNames)
+    try {
+      await syncServerFilesOneWL({ whitelabelName, fileExtension, folderPath });
+    } catch (error) {
+      log(error);
+      await delay(111);
+      await syncServerFilesOneWL({ whitelabelName, fileExtension, folderPath });
+    }
+}
+
 // =========================== Export Part ===========================
 module.exports = {
   // getPaths,
@@ -1168,6 +1274,8 @@ module.exports = {
   saveFile,
   // getActiveWhiteLabel,
   // checkIsExitstedSEOFilesAllWLs,
+  syncServerFilesOneWL,
+  generateTokenFetchFile,
 };
 
 // =========================== Test Part  ===========================
@@ -1188,6 +1296,25 @@ module.exports = {
   //console.log(await isValidDomain('huhuhu.com'));
   // console.log(hW);
   // hW.forEach((w) => console.log(h2a(w)));
+  // await fetchFilesName({
+  //   whitelabelUrl: 'https://luxurybet88.info',
+  //   fileExtension: 'aspx',
+  //   folderPath: '',
+  // });
+  // await fetchFile({
+  //   whitelabelUrl: 'https://luxurybet88.info',
+  //   fullFileName:
+  //     'D:\\Web\\LUXURYBET88Web_Proxy\\WebUI\\Headers\\Header168.aspx',
+  // });
+  // saveFileToDisk({
+  //   fullFileName:
+  //     'D:\\Web\\LUXURYBET88Web_Proxy\\WebUI\\Headers\\Header168.aspx',
+  // });
+  // await syncServerFilesOneWL({
+  //   whitelabelName: 'luxurybet88',
+  //   fileExtension: 'aspx',
+  //   folderPath: '',
+  // });
 })();
 
 (async function () {
@@ -1243,12 +1370,23 @@ module.exports = {
     .option(
       '-dmallwls, --domain-all-wls',
       'sync first valid domain of all white labels'
-    ).option(
+    )
+    .option(
       '-ud, --update-domain <domain>',
       'update valid domain by manual specific domain'
-    ).option(
-      '-list, --list-domain',
-      'only list domain not update'
+    )
+    .option('-list, --list-domain', 'only list domain not update')
+    .option(
+      '-fe, --file-extension <extension>',
+      'specify file extension, default is "aspx"'
+    )
+    .option(
+      '-fp, --folder-path <path>',
+      'specify folder path to get file list, default is "/"'
+    )
+    .option(
+      '-sf, --server-files <whitelabelnames>',
+      'sync server files first valid domain of specify name of WL, can use WL1,WL2 to for multiple WLs'
     );
   program.parse(process.argv);
 
@@ -1324,7 +1462,7 @@ module.exports = {
             cookie,
             whitelabelName,
           });
-        if(!program.listDomain) await updateValidDomains({ validDomains });
+        if (!program.listDomain) await updateValidDomains({ validDomains });
       } else
         await syncValidDomainsAllWLs({
           whiteLabelNameList,
@@ -1344,6 +1482,31 @@ module.exports = {
         domainType,
         cookie,
       });
+    }
+    // Sync server files
+    else if (program.serverFiles) {
+      if (program.log) setIsVisibleLog(true);
+      if (program.www) setHas3w(true);
+      if (program.http) setProtocol('http://');
+      let fileExtension = 'aspx',
+        folderPath = '';
+      if (program.fileExtension) fileExtension = program.fileExtension;
+      if (program.folderPath) folderPath = program.folderPath;
+      let whitelabelNames = program.serverFiles.split(',');
+      //if (whiteLabelNames.length > 1) fromIndex = program.from;
+      if (whitelabelNames.length === 1) {
+        let whitelabelName = whitelabelNames[0].toUpperCase();
+        await syncServerFilesOneWL({
+          whitelabelName,
+          fileExtension,
+          folderPath,
+        });
+      } else
+        syncServerFilesWLs({
+          whitelabelNames,
+          fileExtension,
+          folderPath,
+        });
     }
     sync['startRDService'] = startRDService;
     sync['importRDCli'] = importRDCli;
