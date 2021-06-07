@@ -10,14 +10,14 @@ namespace @switch
     {
         static void Main(string[] args)
         {
-            var StartDate = new DateTime(2020, 11, 30);
+            var StartDate = new DateTime(2021, 6, 1);
             var EndDate = DateTime.Today;
             //Console.WriteLine(StartDate);
             //Console.WriteLine(EndDate);
             //Console.WriteLine((EndDate - StartDate).TotalDays);
             //Console.ReadKey();
 
-            if ((EndDate - StartDate).TotalDays <= 187)
+            if ((EndDate - StartDate).TotalDays <= 369)
             {
                 //switchClientInWebConfig("C:\\switchtool\\web.config", "LIGA888");
                 switchClientInWebConfig(args[0], args[1], args[2]);

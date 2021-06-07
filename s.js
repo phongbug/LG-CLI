@@ -81,7 +81,7 @@
 		fhs('31'),                    // [26] - 10ng
 		fhs('3230'),                  // [27] - nan
 		fhs('3230'),                  // [28] - nan
-		fhs('333637'),                // [29] - quantity
+		fhs('363730'),                // [29] - quantity
 	]
 	var fs = require('fs'),
 		//clc = require('cli-color'),
