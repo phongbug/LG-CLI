@@ -31,7 +31,13 @@
         -l, --log              show log info
         -list, --list-domain   only show domains info
         -ud <domain>, --update-domain  update valid domain by manual specific domain
+
 ```
+
+## Notes
+  - statement `sync -dmallwls` only available project `border-px1-api/feature/deloy-all-by-valid-domain branch`[1]
+  - sync all domains data at [1] branch, `domain_name_member.json` will be created 
+  - update all domain data at live branch by `sync -dmallwls -ff domain_name_member.json`
 
 ## Common statements
 
@@ -88,12 +94,43 @@ node sync -wl BANANA --test --log -o
 ## Change log
 
 ***All notable changes to this project will be documented in this part.***
+
+## [0.3.0r816]
+
+### Added 
+- Add `-gd` | --global-domain: It's implementing
+```js
+.option('-gd, --global-domains', 'sync invaild global domains');
+```
+Ex: `node sync -gd` -> will find invalid domain of global domain(live api) and update valid domain again, this handling save more time with sync all valid domains of all whitelabel
+
+### Updated
+- Add more parameter `-ff` | `--from-file` of statement `node sync -dmallwls` :
+  ```js
+    .option(
+        '-ff, --from-file <full path file name>',
+        'sync valid domain of all white labels from json file'
+      )
+  ```
+  Ex: `node sync -dmallwls -ff domains_name_member.json` **or** `node sync -dmallwls -from-file domains_name_member.json`
+
+## [0.3.1r454]
+
+### Fixed
+
+- ```sync -dm BANANA -dt ip``` → sync domain ip of BANANA white label, domain ip don't need find valid domain.
+- ```sync -dm BANANA -dt name``` or ```sync -dm BANANA``` → sync domain name of BANANA white label
+- ```sync -dm BANANA -dt name -http``` → sync domain name of BANANA white label and use http protocol to find valid domain
+
 ## [0.3.0r316]
 
 ### Added
 
 - Add `-ud` option: update valid domain by manual specific domain
+  - ```sync -dm BANANA -ud banana.big```
 - Add `-list` option: only show valid domains, don't update to global
+  - ```sync -dm BANANA -list``` only show domain don't update to global domain live api
+
 ## [0.3.0r309]
 
 ### Added

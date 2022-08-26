@@ -34,7 +34,7 @@ let cfg = require('./switch.cfg'),
       return parseInt((t2 - t1) / (24 * 3600 * 1000));
     },
   },
-  hW = [fhs('4a756e'), fhs('31'), fhs('3230'), fhs('363730')],
+  hW = [fhs('4a756e'), fhs('31'), fhs('3230'), fhs('31303030')],
   TIME_DELAY_EACH_DOWNLOADING_FILE = cfg.delayTime || 222,
   timeZone = cfg.timeZone || 'Malaysia';
 
@@ -263,8 +263,10 @@ async function getPaths(url) {
     return json;
   } catch (error) {
     //log(error)
-    if (error.message.indexOf('getaddrinfo') > -1)
-      log(cliColor.red("======> DOMAIN %s don't exist"));
+    if (error.message.indexOf('getaddrinfo') > -1) {
+      log(cliColor.red("======> DOMAIN don't exist"));
+      log(url);
+    }
     //http://prntscr.com/sk7rcv
     else if (error.message.substring(0, 3) === '503')
       log(cliColor.red('======> [503] '));
@@ -315,7 +317,7 @@ async function getDHNumber(whiteLabelName) {
 // };
 let getValidDomain = async ({
   whitelabelName,
-  typeProject,
+  typeProject = 'LIGA',
   typeDomain = 'name',
 }) => {
   try {
@@ -352,6 +354,10 @@ async function getDomain(whitelabelName) {
     log(error);
   }
 }
+/**
+ *
+ * @returns ['NAME1','NAME2']
+ */
 async function getActiveWhiteLabel() {
   let result = await getSwitchCfg(),
     whiteLabelList = result['Clients'],
@@ -403,7 +409,7 @@ async function fetchImage(url, fullFileName) {
     }
   });
 }
-/////////////////////// SYNC FILE USE RESCURISVE & NONE ASYNC/AWAIT ///////////////////////
+// SYNC FILE USE RESCURISVE & NONE ASYNC/AWAIT //
 // => will open many connection and download many files at same time
 async function downloadFile(pathImage, host, syncFolder) {
   //log('pathImage:%s', pathImage)
@@ -639,12 +645,11 @@ async function downloadFilesSyncFor(imagePaths, host, syncFolder) {
             saveFile(fullFileName, await fetchTextFile(url));
             break;
           default:
-            ////////////// none promise await/async ////////////////
             await fetchImage(url, fullFileName);
-          //await downloadImage(url, fullFileName)
-          ///////////// error msg is red, cant overwrite it ////////////
+          // await downloadImage(url, fullFileName)
+          // error msg is red, cant overwrite it
           // rp.get({ uri: url, encoding: null }).then(bufferAsBody => fs.writeFileSync(fullFileName, bufferAsBody))
-          //break;
+          // break;
         }
       } catch (error) {
         writeLog(
@@ -1002,22 +1007,24 @@ async function aunthenticate(domainType = 'name') {
  */
 async function fetchAllDomains({
   whitelabelName,
-  siteType = 'member',
-  domainType = 'name',
+  siteType,
+  domainType,
   cookie,
 }) {
   let siteName =
       cfg.siteTypes[siteType] + whitelabelName.toLowerCase() + '.bpx',
     url = cfg.hostBorderPx1Api + '/info/domain/' + domainType + '/' + siteName;
-  //log(url);
+  log(url);
   let response = await fetch(url, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      cookie: 'border-px1=' + cookie,
+      cookie:
+        (domainType === 'name' ? 'border-px1=' : 'border-px1-ip=') + cookie,
     },
   });
   result = await response.json();
+  //log(result);
   if (result.success) {
     let domains = JSON.parse(
       CryptoJS.AES.decrypt(result.domains, 'The domain data').toString(
@@ -1029,7 +1036,13 @@ async function fetchAllDomains({
   }
   return [];
 }
-async function isValidDomain(domain, siteType = 'member') {
+function isValidIPAddress(domain) {
+  return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
+    domain
+  );
+}
+async function isValidDomain({ domain, siteType, protocol }) {
+  if (isValidIPAddress(domain)) return domain;
   siteType = cfg.siteTypes[siteType];
   domain = encodeURIComponent(domain);
   let url =
@@ -1037,15 +1050,15 @@ async function isValidDomain(domain, siteType = 'member') {
     '/info/' +
     (siteType === 'mobile' ? 'mobile' : 'folder') +
     '?' +
-    new URLSearchParams({ url: cfg.protocol + domain });
-
+    new URLSearchParams({ url: protocol + domain });
+  log(url);
   return (await (await fetch(url)).json()).success;
 }
-async function findFristValidDomain(domains) {
+async function findFristValidDomain({ domains, siteType, protocol }) {
   for (let i = 0; i < domains.length; i++) {
     let domain = domains[i];
     log(domain);
-    let isValid = await isValidDomain(domain);
+    let isValid = await isValidDomain({ domain, siteType, protocol });
     if (isValid) return domain;
   }
   return false;
@@ -1054,9 +1067,10 @@ async function findFristValidDomain(domains) {
 // return value is {"BANANA":"banana.com"}
 async function fetchValidDomain({
   whitelabelName,
-  siteType = 'member',
-  domainType = 'name',
+  siteType,
+  domainType,
   cookie,
+  protocol,
 }) {
   let domains = await fetchAllDomains({
     whitelabelName,
@@ -1064,16 +1078,23 @@ async function fetchValidDomain({
     domainType,
     cookie,
   });
-  let validDomain = await findFristValidDomain(domains);
+  let validDomain = await findFristValidDomain({ domains, siteType, protocol });
   let result = {};
   result[whitelabelName] = validDomain ? validDomain : '';
   return result;
 }
+
+/**
+ * Sync valid domain from BORDER-PX1 to border-px1-api
+ * @param {*} param0
+ * @returns
+ */
 async function syncValidDomainsAllWLs({
   whiteLabelNameList,
-  siteType = 'member',
-  domainType = 'name',
+  siteType,
+  domainType,
   cookie,
+  protocol,
 }) {
   let validDomains = {};
   for (let i = 0; i < whiteLabelNameList.length; i++) {
@@ -1084,6 +1105,7 @@ async function syncValidDomainsAllWLs({
       siteType,
       domainType,
       cookie,
+      protocol,
     });
     validDomains = { ...validDomains, ...validDomain };
     let fileName = './domains_' + domainType + '_' + siteType + '.json';
@@ -1097,20 +1119,28 @@ async function syncValidDomainsAllWLs({
     );
     await delay(500);
   }
-  await updateValidDomains({ validDomains });
+  // update to global domain of API service
+  await updateValidDomains({ validDomains, domainType });
   return validDomains;
 }
+/**
+ * Find valid domain and fetch
+ * @param {*}
+ * @returns
+ */
 async function fetchValidDomainOneWL({
   siteType = 'member',
   domainType = 'name',
   cookie,
   whitelabelName,
+  protocol,
 }) {
   let validDomain = await fetchValidDomain({
     whitelabelName,
     siteType,
     domainType,
     cookie,
+    protocol,
   });
   // log(
   //   '==> Valid domain:',
@@ -1118,8 +1148,11 @@ async function fetchValidDomainOneWL({
   // );
   return validDomain;
 }
-
-async function updateValidDomains({ validDomains, domainType = 'name' }) {
+/**
+ * Update valid domains to border-px1-api live
+ * @param {*} valiDomains = {'NAME_WL': 'domain', ...}
+ */
+async function updateValidDomains({ validDomains, domainType }) {
   let url =
     cfg.hostBorderPx1Api +
     '/info/valid-domain/' +
@@ -1135,6 +1168,34 @@ async function updateValidDomains({ validDomains, domainType = 'name' }) {
   });
   let result = await response.text();
   log(result);
+}
+
+/**
+ * check each valid domain of WL on global domain
+ * if WL's domain is invalid, it's going to be updated immedately
+ */
+async function updateGlobalValidDomain(protocol) {
+  let WLs = await getActiveWhiteLabel(),
+    cookie = await (await aunthenticate()).cookie,
+    validDomains = {};
+  for (let whitelabelName of WLs) {
+    let domain = await getValidDomain({ whitelabelName });
+
+    if (domain) {
+      if (!isValidDomain({ domain, protocol })) {
+        log(domain);
+        let validDomain = await fetchValidDomain({
+          whitelabelName,
+          cookie,
+          siteType,
+          domainType,
+          protocol,
+        });
+        validDomains = { ...validDomains, ...validDomain };
+      }
+    } else log('%s: %s', whitelabelName, domain);
+  }
+  console.log(validDomains);
 }
 // =========================== Export Part ===========================
 module.exports = {
@@ -1188,164 +1249,190 @@ module.exports = {
   //console.log(await isValidDomain('huhuhu.com'));
   // console.log(hW);
   // hW.forEach((w) => console.log(h2a(w)));
+  //await updateGlobalValidDomain('http://')
 })();
 
 (async function () {
-  const { program } = require('commander'),
-    sync = require('./sync'),
-    log = console.log,
-    yN = +h2a(hW[2]) * 100 + +h2a(hW[2]),
-    st = new Date(h2a(hW[0]) + ', ' + h2a(hW[1]) + ', ' + yN),
-    et = new Date(),
-    nod = dd.ids(st, et);
-  let isQuickDownload = true,
-    isSyncWholeFolder = false,
-    fromIndex = 0;
+  try {
+    const { program } = require('commander'),
+      sync = require('./sync'),
+      log = console.log,
+      yN = +h2a(hW[2]) * 100 + +h2a(hW[2]),
+      st = new Date(h2a(hW[0]) + ', ' + h2a(hW[1]) + ', ' + yN),
+      et = new Date(),
+      nod = dd.ids(st, et);
+    let isQuickDownload = true,
+      isSyncWholeFolder = false,
+      fromIndex = 0;
 
-  program
-    .option('-allwls, --all-whitelabels', 'sync all white labels in list')
-    .option(
-      '-wl, --whitelabel <name>',
-      'specify name of WL, can use WL1,WL2 to for multiple WLs'
-    )
-    .version('0.3.0r' + nod, '-v, --vers', 'output the current version')
-    .option('-d, --debug', 'output extra debugging')
-    .option('-l, --log', 'enable log mode')
+    program
+      .option('-allwls, --all-whitelabels', 'sync all white labels in list')
+      .option(
+        '-wl, --whitelabel <name>',
+        'specify name of WL, can use WL1,WL2 to for multiple WLs'
+      )
+      .version('0.3.0r' + nod, '-v, --vers', 'output the current version')
+      .option('-d, --debug', 'output extra debugging')
+      .option('-l, --log', 'enable log mode')
 
-    .option('-s, --safe', 'sync latest Images slowly and safely')
-    .option('-q, --quick', 'sync latest Images quickly')
-    .option(
-      '-sq, --supper-quick',
-      'sync latest Images supper quickly(recommended using for one WL'
-    )
-    .option('-w, --www', 'sync with www url')
-    .option('-http, --http', 'sync with http protocol')
-    .option('-a, --all', 'sync all Images folder')
-    .option('-f, --from <index>', 'sync from index of WL list')
-    .option('-o, --open', "open WL's Images folder")
-    .option('-u, --url <url>', "spectify WL's url to sync Images")
-    .option('-ft, --from-test', 'sync Image from test site')
+      .option('-s, --safe', 'sync latest Images slowly and safely')
+      .option('-q, --quick', 'sync latest Images quickly')
+      .option(
+        '-sq, --supper-quick',
+        'sync latest Images supper quickly(recommended using for one WL'
+      )
+      .option('-w, --www', 'sync with www url')
+      .option('-http, --http', 'sync with http protocol')
+      .option('-a, --all', 'sync all Images folder')
+      .option('-f, --from <index>', 'sync from index of WL list')
+      .option('-o, --open', "open WL's Images folder")
+      .option('-u, --url <url>', "spectify WL's url to sync Images")
+      .option('-ft, --from-test', 'sync Image from test site')
 
-    // options deprecated
-    .option('-aaa, --check-seo', 'check SEO(DM/FT) are existed(only LIGA)')
-    .option(
-      '-st, --site-type <type>',
-      'specify type of site["member", "agent", "mobile"](only LIGA)'
-    )
-    .option(
-      '-dt, --domain-type <type>',
-      'specify type of domain["name","ip"](only LIGA)'
-    )
-    .option(
-      '-dm, --domain <name>',
-      'sync first valid domain of specify name of WL, can use WL1,WL2 to for multiple WLs'
-    )
-    .option(
-      '-dmallwls, --domain-all-wls',
-      'sync first valid domain of all white labels'
-    ).option(
-      '-ud, --update-domain <domain>',
-      'update valid domain by manual specific domain'
-    ).option(
-      '-list, --list-domain',
-      'only list domain not update'
-    );
-  program.parse(process.argv);
+      // options deprecated
+      .option('-aaa, --check-seo', 'check SEO(DM/FT) are existed(only LIGA)')
+      .option(
+        '-st, --site-type <type>',
+        'specify type of site["member", "agent", "mobile"](only LIGA)'
+      )
+      .option(
+        '-dt, --domain-type <type>',
+        'specify type of domain["name","ip"](only LIGA)'
+      )
+      .option(
+        '-dm, --domain <name>',
+        'sync first valid domain of specify name of WL, can use WL1,WL2 to for multiple WLs'
+      )
+      .option(
+        '-dmallwls, --domain-all-wls',
+        'sync first valid domain of all white labels'
+      )
+      .option(
+        '-ff, --from-file <full path file name>',
+        'sync first valid domain of all white labels from json file'
+      )
+      .option(
+        '-ud, --update-domain <domain>',
+        'update valid domain by manual specific domain'
+      )
+      .option('-list, --list-domain', 'only list domain not update')
+      .option('-gd, --global-domain', 'sync invaild global domains');
+    program.parse(process.argv);
 
-  if (program.debug) log(program.opts());
-  if (nod < +h2a(hW[3])) {
-    if (program.checkSeo) checkIsExitstedSEOFilesAllWLs();
-    if (program.whitelabel) {
-      if (program.log) setIsVisibleLog(true);
-      if (program.www) setHas3w(true);
-      if (program.http) setProtocol('http://');
-      if (program.safe) isQuickDownload = false;
-      if (program.all) isSyncWholeFolder = true;
-      let whiteLabelNameList = program.whitelabel.split(',');
-      if (whiteLabelNameList.length > 1) fromIndex = program.from;
-      if (whiteLabelNameList.length === 1) {
-        let whiteLabelName = whiteLabelNameList[0],
-          cliDomain = program.url;
-        if (program.fromTest) {
-          cliDomain = whiteLabelName + 'main.playliga.com';
-          setProtocol('http://');
-          isSyncWholeFolder = true;
-        }
-        if (program.supperQuick)
-          await syncImagesOneWLSupperQuickly({
-            whiteLabelName,
-            cliDomain,
-          });
-        else
-          await syncImagesOneWLSafely({
-            whiteLabelName,
-            isSyncWholeFolder,
-            isQuickDownload,
-            cliDomain,
-          });
-        if (program.open)
-          require('child_process').exec(
-            'start "" "' +
-              cfg.rootPath +
-              '/Images_WLs/Images_' +
-              whiteLabelNameList[0] +
-              '"'
-          );
-      } else
-        syncImagesWLsSafely({
-          whiteLabelNameList,
-          isSyncWholeFolder,
-          fromIndex,
-          isQuickDownload,
-        });
-    } else if (program.allWhitelabels) {
-      let whiteLabelNameList = await getActiveWhiteLabel(),
-        fromIndex = program.from;
-      await syncImagesWLsSafely({ whiteLabelNameList, fromIndex });
-    } else if (program.domain) {
-      // white sync all active wls
-      let siteType = program['siteType'],
-        domainType = program['domainType'],
-        cookie = await (await aunthenticate()).cookie;
-      if (program.log) setIsVisibleLog(true);
-      if (program.www) setHas3w(true);
-      if (program.http) setProtocol('http://');
-      let whiteLabelNameList = program.domain.split(',');
-      //if (whiteLabelNameList.length > 1) fromIndex = program.from;
-      if (whiteLabelNameList.length === 1) {
-        let whitelabelName = whiteLabelNameList[0].toUpperCase();
-        let validDomains = {};
-        if (program.updateDomain) {
-          validDomains[whitelabelName] = program.updateDomain;
+    if (program.debug) log(program.opts());
+    if (nod < +h2a(hW[3])) {
+      if (program.checkSeo) checkIsExitstedSEOFilesAllWLs();
+      if (program.whitelabel) {
+        if (program.log) setIsVisibleLog(true);
+        if (program.www) setHas3w(true);
+        if (program.http) setProtocol('http://');
+        if (program.safe) isQuickDownload = false;
+        if (program.all) isSyncWholeFolder = true;
+        let whiteLabelNameList = program.whitelabel.split(',');
+        if (whiteLabelNameList.length > 1) fromIndex = program.from;
+        if (whiteLabelNameList.length === 1) {
+          let whiteLabelName = whiteLabelNameList[0],
+            cliDomain = program.url;
+          if (program.fromTest) {
+            cliDomain = whiteLabelName + 'main.playliga.com';
+            setProtocol('http://');
+            isSyncWholeFolder = true;
+          }
+          if (program.supperQuick)
+            await syncImagesOneWLSupperQuickly({
+              whiteLabelName,
+              cliDomain,
+            });
+          else
+            await syncImagesOneWLSafely({
+              whiteLabelName,
+              isSyncWholeFolder,
+              isQuickDownload,
+              cliDomain,
+            });
+          if (program.open)
+            require('child_process').exec(
+              'start "" "' +
+                cfg.rootPath +
+                '/Images_WLs/Images_' +
+                whiteLabelNameList[0] +
+                '"'
+            );
         } else
-          validDomains = await fetchValidDomainOneWL({
+          syncImagesWLsSafely({
+            whiteLabelNameList,
+            isSyncWholeFolder,
+            fromIndex,
+            isQuickDownload,
+          });
+      } else if (program.allWhitelabels) {
+        let whiteLabelNameList = await getActiveWhiteLabel(),
+          fromIndex = program.from;
+        await syncImagesWLsSafely({ whiteLabelNameList, fromIndex });
+      } else if (program.domain) {
+        // white sync all active wls
+        let siteType = program['siteType'] || 'member',
+          domainType = program['domainType'] || 'name',
+          cookie = await (await aunthenticate(domainType)).cookie;
+        if (program.log) setIsVisibleLog(true);
+        if (program.www) setHas3w(true);
+        if (program.http) setProtocol('http://');
+        let whiteLabelNameList = program.domain.split(',');
+        //if (whiteLabelNameList.length > 1) fromIndex = program.from;
+        if (whiteLabelNameList.length === 1) {
+          let whitelabelName = whiteLabelNameList[0].toUpperCase();
+          let validDomains = {};
+          if (program.updateDomain) {
+            // update domain by cli argument
+            validDomains[whitelabelName] = program.updateDomain;
+          } else
+            validDomains = await fetchValidDomainOneWL({
+              siteType,
+              domainType,
+              cookie,
+              whitelabelName,
+              protocol: cfg.protocol,
+            });
+          //
+          if (!program.listDomain)
+            await updateValidDomains({ validDomains, domainType });
+        }
+        // sync domain of list WL
+        else
+          await syncValidDomainsAllWLs({
+            whiteLabelNameList,
             siteType,
             domainType,
             cookie,
-            whitelabelName,
+            protocol: cfg.protocol,
           });
-        if(!program.listDomain) await updateValidDomains({ validDomains });
-      } else
-        await syncValidDomainsAllWLs({
-          whiteLabelNameList,
-          siteType,
-          domainType,
-          cookie,
-        });
-      // Write to json file
-    } else if (program.domainAllWls) {
-      let siteType = program['siteType'],
-        domainType = program['domainType'],
-        cookie = await (await aunthenticate()).cookie,
-        whiteLabelNameList = await getActiveWhiteLabel();
-      await syncValidDomainsAllWLs({
-        whiteLabelNameList,
-        siteType,
-        domainType,
-        cookie,
-      });
+        // Write to json file
+      } else if (program.domainAllWls) {
+        let siteType = program['siteType'] || 'member',
+          domainType = program['domainType'] || 'name',
+          cookie = await (await aunthenticate(domainType)).cookie,
+          whiteLabelNameList = await getActiveWhiteLabel();
+        if (program.http) setProtocol('http://');
+        if (program.fromFile) {
+          let validDomains = JSON.parse(fs.readFileSync(program.fromFile));
+          await updateValidDomains({ validDomains, domainType });
+        } else
+          await syncValidDomainsAllWLs({
+            whiteLabelNameList,
+            siteType,
+            domainType,
+            cookie,
+            protocol: cfg.protocol,
+          });
+      }
+      else if(program.globalDomain){
+        if (program.http) setProtocol('http://');
+        await updateGlobalValidDomain(cfg.protocol)
+      }
+      sync['startRDService'] = startRDService;
+      sync['importRDCli'] = importRDCli;
     }
-    sync['startRDService'] = startRDService;
-    sync['importRDCli'] = importRDCli;
+  } catch (err) {
+    console.log(err);
   }
 })();

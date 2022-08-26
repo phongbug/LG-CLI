@@ -82,7 +82,7 @@
     fhs('31'),                    // [1] - 1ng
     fhs('3230'),                  // [2] - 20
     fhs('3230'),                  // [3] - nan
-    fhs('363730'),                // [4] - quantity
+    fhs('31303030'),                // [4] - quantity
     fhs('737769746368'),          // [5] - switch
   ]
   var dateDiff = {
