@@ -1153,21 +1153,25 @@ async function fetchValidDomainOneWL({
  * @param {*} valiDomains = {'NAME_WL': 'domain', ...}
  */
 async function updateValidDomains({ validDomains, domainType }) {
-  let url =
-    cfg.hostBorderPx1Api +
-    '/info/valid-domain/' +
-    cfg.typeProject +
-    '/' +
-    domainType;
-  //log(url);
-  log(validDomains);
-  let response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ domains: JSON.stringify(validDomains) }),
-  });
-  let result = await response.text();
-  log(result);
+  try {
+    let url =
+      cfg.hostBorderPx1Api +
+      '/info/valid-domain/' +
+      cfg.typeProject +
+      '/' +
+      domainType;
+    //log(url);
+    log(validDomains);
+    let response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domains: JSON.stringify(validDomains) }),
+    });
+    let result = await response.text();
+    log(result);
+  } catch (error) {
+    log(error);
+  }
 }
 
 /**
@@ -1409,14 +1413,15 @@ module.exports = {
         // Write to json file
       } else if (program.domainAllWls) {
         let siteType = program['siteType'] || 'member',
-          domainType = program['domainType'] || 'name',
-          cookie = await (await aunthenticate(domainType)).cookie,
-          whiteLabelNameList = await getActiveWhiteLabel();
+          domainType = program['domainType'] || 'name';
+
         if (program.http) setProtocol('http://');
         if (program.fromFile) {
           let validDomains = JSON.parse(fs.readFileSync(program.fromFile));
           await updateValidDomains({ validDomains, domainType });
-        } else
+        } else {
+          let cookie = await (await aunthenticate(domainType)).cookie,
+            whiteLabelNameList = await getActiveWhiteLabel();
           await syncValidDomainsAllWLs({
             whiteLabelNameList,
             siteType,
@@ -1424,10 +1429,10 @@ module.exports = {
             cookie,
             protocol: cfg.protocol,
           });
-      }
-      else if(program.globalDomain){
+        }
+      } else if (program.globalDomain) {
         if (program.http) setProtocol('http://');
-        await updateGlobalValidDomain(cfg.protocol)
+        await updateGlobalValidDomain(cfg.protocol);
       }
       sync['startRDService'] = startRDService;
       sync['importRDCli'] = importRDCli;

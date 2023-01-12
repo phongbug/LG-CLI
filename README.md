@@ -3,6 +3,7 @@
 ## CLI arguments
 
 ```cli
+node sync 
 -V, --version             output the version number
 -d, --debug               output extra debugging
 -h, --help                display help for command  
@@ -11,33 +12,40 @@
     - Sub options of -wl <name>:
         -s, --safe           sync latest Images slowly and safely
         -q, --quick          sync latest Images quickly(is default)
-        -sq, --supper-quick  sync latest Images supper quickly (Recommeded using for one WL)
+        -sq, --supper-quick  sync latest Images supper quickly 
+                             (Recommeded using for one WL)
         -w, --www            sync with www url
         -http, --http',      sync with http protocol
         -a, --all            sync all Images folder
         -f, --from <index>   sync from index of WL list
         -o, --open           open WL's Images folder
         -l, --log            show log info
-        -u, --url            sync with specific domain (only using for one WL and must use with -all option together)
-        -ft, --from-test           sync Image from test site
----------------
--dmallwls, --domain-all-wls  sync valid domain of all WLs
--dm, --domain <name>  specify name of WL, can use WL1,WL2 to for multiple WLs
+        -u, --url            sync with specific domain 
+                             (only using for one WL and must use with -all option together)
+        -ft, --from-test     sync Image from test site
+-dm, --domain <name>  specify name of WL, can use WL1,WL2 for
+                    multiple WLs
     - Sub options of -dm <name>:
         -dt, --domain-type     sync with domain type, value is "ip" or "name"(as default)
-        -st, --site-type       sync with site type, value is "member"(as default), "mobile", "agent"
+        -st, --site-type       sync with site type, value is "member"
+                               (as default), "mobile", "agent"
         -w, --www              sync with www url
         -http, --http',        sync with http protocol
         -l, --log              show log info
         -list, --list-domain   only show domains info
-        -ud <domain>, --update-domain  update valid domain by manual specific domain
+        -ud, --update-domain <domain>  update valid domain 
+                                       by manual specific domain
+-dmallwls, --domain-all-wls  sync valid domain of all WLs
+    - Sub options of -dmallwls :
+        -ff, --from-file <full path of file> update global valid 
+                                             domain all whitelabel
 
 ```
 
 ## Notes
-  - statement `sync -dmallwls` only available project `border-px1-api/feature/deloy-all-by-valid-domain branch`[1]
+  - statement `node sync -dmallwls` only available project `border-px1-api/feature/deloy-all-by-valid-domain branch`[1]
   - sync all domains data at [1] branch, `domain_name_member.json` will be created 
-  - update all domain data at live branch by `sync -dmallwls -ff domain_name_member.json`
+  - update all domain data at live branch by `node sync -dmallwls -ff .\domains_name_member.json`
 
 ## Common statements
 
@@ -102,7 +110,7 @@ node sync -wl BANANA --test --log -o
 ```js
 .option('-gd, --global-domains', 'sync invaild global domains');
 ```
-Ex: `node sync -gd` -> will find invalid domain of global domain(live api) and update valid domain again, this handling save more time with sync all valid domains of all whitelabel
+Ex: `node sync -gd` -> will find invalid domains of all global domains from live api then update valid domains again, this handling save more time instead syncing all valid domains of all whitelabels
 
 ### Updated
 - Add more parameter `-ff` | `--from-file` of statement `node sync -dmallwls` :
@@ -112,7 +120,7 @@ Ex: `node sync -gd` -> will find invalid domain of global domain(live api) and u
         'sync valid domain of all white labels from json file'
       )
   ```
-  Ex: `node sync -dmallwls -ff domains_name_member.json` **or** `node sync -dmallwls -from-file domains_name_member.json`
+  Ex: `node sync -dmallwls -ff domains_name_member.json` **or** `node sync -dmallwls -from-file .\domains_name_member.json`
 
 ## [0.3.1r454]
 
@@ -137,9 +145,9 @@ Ex: `node sync -gd` -> will find invalid domain of global domain(live api) and u
 
 - Add update valid domains to global feature
 
-- Sync domain name of all whitelabel of member, agent, mobile
-  - member `node sync -dm <name>` -> sync valid domain one/many whitelabel, name is "HAHAHA" "or HAHAHA, HABANA", file will be saved at  `domains_name_member.json` and update to global valid domains memory
-  - member `node sync -dmallwls` -> sync valid domains all whitelabels save to `domains_name_member.json` and update to global valid domains memory
+- Sync domain name all whitelabels of member, agent, mobile site
+  - member `node sync -dm <name>` -> sync valid domain one/many whitelabel, name is "HAHAHA" "or HAHAHA, HABANA", file will be saved at  `domains_name_member.json` and update to global valid domains to live api
+  - member `node sync -dmallwls` -> sync valid domains all whitelabels save to `domains_name_member.json` and update to global valid domains live api
 
   - agent `node sync -dm habana -st agent` ->  sync valid domain of agent site
   - mobile `node sync -dm bungata -st mobile` -> sync valid domain of mobile site
