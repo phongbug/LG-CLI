@@ -15,14 +15,15 @@
     "commander": "^5.1.0",
     "cors": "^2.8.5",
     "crypto-js": "^4.0.0",
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "fs-extra": "^9.0.1",
-    "node-fetch": "^2.6.1",
+    "glob": "^9.2.1",
+    "node-fetch": "^2.6.9",
     "node-jsencrypt": "^1.0.0",
     "rimraf": "^3.0.2",
-    "shelljs": "^0.8.4"
+    "shelljs": "^0.8.5"
   },
   "devDependencies": {
-    "javascript-obfuscator": "^2.9.4"
+    "javascript-obfuscator": "^4.0.2"
   }
 }
