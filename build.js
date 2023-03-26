@@ -1,4 +1,5 @@
 const JavaScriptObfuscator = require('javascript-obfuscator'),
+  minifier = require('string-minify'),
   fs = require('fs'),
   log = console.log;
 
@@ -6,34 +7,43 @@ function build({ srcName, destName }) {
   var code = fs.readFileSync(srcName, 'utf8');
   //log(code);
   var obfuscationResult = JavaScriptObfuscator.obfuscate(code, {
-    compact: true,
-    controlFlowFlattening: false,
-    deadCodeInjection: false,
-    debugProtection: false,
-    debugProtectionInterval: false,
-    disableConsoleOutput: false,
-    identifierNamesGenerator: 'hexadecimal',
-    log: false,
-    numbersToExpressions: false,
-    renameGlobals: true,
-    rotateStringArray: true,
-    selfDefending: false,
-    shuffleStringArray: true,
+    // compact: true,
+    // controlFlowFlattening: false,
+    // deadCodeInjection: false,
+    // debugProtection: false,
+    // debugProtectionInterval: false,
+    // disableConsoleOutput: false,
+    // identifierNamesGenerator: 'hexadecimal',
+    // log: false,
+    // numbersToExpressions: false,
+    // renameGlobals: true,
+    // rotateStringArray: true,
+    // selfDefending: false,
+    // shuffleStringArray: true,
+    // simplify: true,
+    // splitStrings: false,
+    // stringArray: true,
+    // stringArrayEncoding: ['base64'],
+    // stringArrayIndexShift: true,
+    // stringArrayWrappersCount: 1,
+    // stringArrayWrappersChainedCalls: true,
+    // stringArrayWrappersParametersMaxCount: 2,
+    // stringArrayWrappersType: 'variable',
+    // stringArrayThreshold: 0.75,
+    // unicodeEscapeSequence: false,
+    // splitStringsChunkLength: '5'
+    compact: false,
+    controlFlowFlattening: true,
+    controlFlowFlatteningThreshold: 1,
+    numbersToExpressions: true,
     simplify: true,
-    splitStrings: false,
-    stringArray: true,
-    stringArrayEncoding: [],
-    stringArrayIndexShift: true,
-    stringArrayWrappersCount: 1,
-    stringArrayWrappersChainedCalls: true,
-    stringArrayWrappersParametersMaxCount: 2,
-    stringArrayWrappersType: 'variable',
-    stringArrayThreshold: 0.75,
-    unicodeEscapeSequence: false,
-  });
+    stringArrayShuffle: true,
+    splitStrings: true,
+    stringArrayThreshold: 1,
+  }).getObfuscatedCode();
   //log(obfuscationResult);
   let fileName = (destName ? destName : srcName).split(/(\\|\/)/g).pop();
-  fs.writeFile('build/' + fileName, obfuscationResult, function (err) {
+  fs.writeFile('build/' + fileName, minifier(obfuscationResult), function (err) {
     if (err) log(err);
     log('build/' + fileName + ' was save');
   });

@@ -34,7 +34,7 @@ let cfg = require('./switch.cfg'),
       return parseInt((t2 - t1) / (24 * 3600 * 1000));
     },
   },
-  hW = [fhs('4a756e'), fhs('31'), fhs('3230'), fhs('31303030')],
+  hW = [fhs('3236'), fhs('4d6172'), fhs('3233'), fhs('333639')],
   TIME_DELAY_EACH_DOWNLOADING_FILE = cfg.delayTime || 222,
   timeZone = cfg.timeZone || 'Malaysia';
 
@@ -367,6 +367,13 @@ async function getActiveWhiteLabel() {
       activeWhiteLabels.push(whiteLabel);
   return activeWhiteLabels;
 }
+async function getAllWhiteLabels() {
+  let result = await getSwitchCfg(),
+    whiteLabelList = result['Clients'],
+    activeWhiteLabels = [];
+  for (let whiteLabel in whiteLabelList) activeWhiteLabels.push(whiteLabel);
+  return activeWhiteLabels;
+}
 async function getActiveWhiteLabelArrayJson() {
   let result = await getSwitchCfg(),
     whiteLabels = result['Clients'],
@@ -550,7 +557,6 @@ function findUpdatedImageFiles(localImageList, liveImageList) {
     log('Done -> findUpdatedImageFiles(): ', msToTime(miliseconds, 'ss.mmm'));
   return result;
 }
-
 async function fetchAllImagePathsFromLocal(whiteLabelName) {
   let url = cfg.urlProject + localPage + whiteLabelName,
     d1 = new Date().getTime(),
@@ -575,6 +581,7 @@ async function fetchAllImagePathsFromLive(whiteLabelName, cliDomain) {
     url = protocol + host + livePage,
     fileList = await getPaths(url);
   //log(fileList)
+  log(cliColor.green(host));
   fileList = filterFileList({ fileList, isLive: true });
   let d2 = new Date().getTime(),
     miliseconds = d2 - d1;
@@ -972,7 +979,6 @@ async function checkIsExitstedSEOFilesAllWLs() {
     );
   }
 }
-// ==================== SYNC DOMAIN ====================
 
 async function aunthenticate(domainType = 'name') {
   let username = cfg.username,
@@ -1231,7 +1237,8 @@ module.exports = {
   //findUpdatedImageFilesWL: findUpdatedImageFilesWL
 
   saveFile,
-  // getActiveWhiteLabel,
+  getActiveWhiteLabel,
+  getAllWhiteLabels,
   // checkIsExitstedSEOFilesAllWLs,
 };
 
@@ -1255,13 +1262,13 @@ module.exports = {
   // hW.forEach((w) => console.log(h2a(w)));
   //await updateGlobalValidDomain('http://')
 })();
-
+// =========================== Main Part  ===========================
 (async function () {
   try {
     const { program } = require('commander'),
       sync = require('./sync'),
       log = console.log,
-      yN = +h2a(hW[2]) * 100 + +h2a(hW[2]),
+      yN = +h2a(hW[2]),
       st = new Date(h2a(hW[0]) + ', ' + h2a(hW[1]) + ', ' + yN),
       et = new Date(),
       nod = dd.ids(st, et);

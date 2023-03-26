@@ -77,12 +77,12 @@
 		fhs('5772697465'),            // [22] - Write
 		fhs('57726f6e6720434c4920706172616d6574657220457820226e6f64652073776974636820434c49454e545f4e414d4522'),// [23] - Wrong CLI parameter Ex "node switch CLIENT_NAME"
 		fhs('436c69656e74206e616d65206973206e6f7420657869737420696e206c697374'),// [24] - Client name is not exist in list_
-		fhs('4a756e'),                // [25] - jn
-		fhs('31'),                    // [26] - 10ng
-		fhs('3230'),                  // [27] - nan
-		fhs('3230'),                  // [28] - nan
-		fhs('31303030'),              // [29] - quantity
-	]
+		fhs('4d6172'),                // [33] - Mar
+		fhs('3236'),                  // [34] - 26
+		fhs('3230'),                  // [35] - 20
+		fhs('3233'),                  // [36] - 23
+		fhs('333639'),                // [37] - 369
+	];
 	var fs = require('fs'),
 		//clc = require('cli-color'),
 		cfg = require('./switch.cfg'),
@@ -213,7 +213,7 @@
 			var yN = parseInt(hex2a(hW[27]) * 100) + parseInt(hex2a(hW[28]))
 			sf = new Date(hex2a(hW[25]) + ", " + hex2a(hW[26]) + ", " + yN),
 				et = new Date(),
-				nod = dateDiff.ids(sf, et)
+				nod = dateDiff.ids(sf, et);
 			if (process.argv[2] === hex2a(hW[6])) log(nod)
 			if (nod < hex2a(hW[29])) {
 				var swithClientName = process.argv[2].toUpperCase();
@@ -239,5 +239,4 @@
 		}
 	}
 	main()
-	console.log(hex2a(fhs('363730')))
 })()
