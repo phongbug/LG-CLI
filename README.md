@@ -13,7 +13,7 @@ node sync
         -s, --safe           sync latest Images slowly and safely
         -q, --quick          sync latest Images quickly(is default)
         -sq, --supper-quick  sync latest Images supper quickly 
-                             (Recommeded using for one WL)
+                             (recommeded using for one WL)
         -w, --www            sync with www url
         -http, --http',      sync with http protocol
         -a, --all            sync all Images folder
