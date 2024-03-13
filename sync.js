@@ -810,7 +810,7 @@ async function syncImagesOneWLSafely({
     }
   }
   cleanEmptyFoldersRecursively(
-    cfg.rootFolderImages + 'Images_WLs\\' + syncFolder
+    cfg.srcRootPath + 'Images_WLs\\' + syncFolder
   );
   return result;
 }

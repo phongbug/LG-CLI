@@ -77,16 +77,18 @@
 		fhs('5772697465'),            // [22] - Write
 		fhs('57726f6e6720434c4920706172616d6574657220457820226e6f64652073776974636820434c49454e545f4e414d4522'),// [23] - Wrong CLI parameter Ex "node switch CLIENT_NAME"
 		fhs('436c69656e74206e616d65206973206e6f7420657869737420696e206c697374'),// [24] - Client name is not exist in list_
-		fhs('4d6172'),                // [33] - Mar
-		fhs('3236'),                  // [34] - 26
+		fhs('4a616e'),                // [33] - jan
+		fhs('3331'),                  // [34] - 31
 		fhs('3230'),                  // [35] - 20
-		fhs('3233'),                  // [36] - 23
+		fhs('3234'),                  // [36] - 24
 		fhs('333639'),                // [37] - 369
 	];
 	var fs = require('fs'),
 		//clc = require('cli-color'),
 		cfg = require('./switch.cfg'),
 		rootPath = cfg.rootPath,
+		srcRootPath = cfg.srcRootPath,
+		destRootPath = cfg.destRootPath,
 		urlProject = cfg.urlProject,
 		//pureNames = ['portal', 'odds', 'menu'],
 		pureNames = [hex2a(hW[2]), hex2a(hW[3]), hex2a(hW[4])],
@@ -118,14 +120,14 @@
 				try {
 					//log('==> SWITCH CSS');
 					var switchClientNames = [
-						rootPath + purePaths[0] + pureNames[0] + '_' + nameClientSwitchTo + extention,
-						rootPath + purePaths[1] + pureNames[1] + '_' + nameClientSwitchTo + extention,
-						rootPath + purePaths[2] + pureNames[2] + '_' + nameClientSwitchTo + extention,
+						srcRootPath + purePaths[0] + pureNames[0] + '_' + nameClientSwitchTo + extention,
+						srcRootPath + purePaths[1] + pureNames[1] + '_' + nameClientSwitchTo + extention,
+						srcRootPath + purePaths[2] + pureNames[2] + '_' + nameClientSwitchTo + extention,
 					];
 					var newNames = [
-						rootPath + pureNames[0] + extention,
-						rootPath + pureNames[1] + extention,
-						rootPath + pureNames[2] + extention,
+						destRootPath + pureNames[0] + extention,
+						destRootPath + pureNames[1] + extention,
+						destRootPath + pureNames[2] + extention,
 					];
 					fs.createReadStream(switchClientNames[0]).pipe(fs.createWriteStream(newNames[0]));
 					log(hex2a(hW[6]) + ' ' + pureNames[0] + '_' + nameClientSwitchTo + extention + ' to ' + pureNames[0] + extention + hex2a(hW[19]));
@@ -151,22 +153,14 @@
 		if (process.argv[2] == undefined || process.argv[2] == "") {
 			sync.log("==========> " + "wrong parameter, miss client name");
 		} else {
-			//var host = process.argv[3];
-			// if (host === undefined || host === "" || host === null) {
-			// 	var prefix = sync.includeWww()
-			// 	var domain = process.argv[2]
-			// 	host = prefix + domain + ".com"
-			// }
-			sync.syncImagesOneWLSafely({ whiteLabelName: nameClientSwitchTo }).then(function () {
-				rimraf(rootPath + pureImageName, function () {
-					var fs = require("fs-extra");
-					var srcImagesFolder = rootPath + pureImagePath + pureImageName + '_' + nameClientSwitchTo;
-					var destImagesFolder = rootPath + pureImageName;
-					fs.copy(srcImagesFolder, destImagesFolder, function (err) {
-						if (err) return console.error(err)
-						log('Switch ' + pureImageName + '_' + nameClientSwitchTo + ' to ' + pureImageName + ' success')
-						callback()
-					})
+			rimraf(srcRootPath + pureImageName, function () {
+				var fs = require("fs-extra");
+				var srcImagesFolder = srcRootPath + pureImagePath + pureImageName + '_' + nameClientSwitchTo;
+				var destImagesFolder = destRootPath + pureImageName;
+				fs.copy(srcImagesFolder, destImagesFolder, function (err) {
+					if (err) return console.error(err)
+					log('Switch ' + pureImageName + '_' + nameClientSwitchTo + ' to ' + pureImageName + ' success')
+					callback()
 				})
 			})
 		}

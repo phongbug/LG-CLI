@@ -10,7 +10,7 @@ namespace @switch
     {
         static void Main(string[] args)
         {
-            var StartDate = new DateTime(2023, 10, 20);
+            var StartDate = new DateTime(2024, 1, 1);
             var EndDate = DateTime.Today;
             //Console.WriteLine(StartDate);
             //Console.WriteLine(EndDate);
@@ -19,15 +19,11 @@ namespace @switch
 
             if ((EndDate - StartDate).TotalDays <= 369)
             {
-                //switchClientInWebConfig("C:\\switchtool\\web.config", "LIGA888");
                 switchClientInWebConfig(args[0], args[1], args[2]);
-                //Console.Write("aaaaaaaaaaaaaaaa");
-                //Console.ReadKey();
             }
             else
             {
-                Console.Write("Switch web.config Delta version");
-                //Console.ReadKey();
+                Console.Write("Switch web.config version");
             }            
         }
         static public void switchClientInWebConfig(string pathWebConfig, string switchClientName, string typeProject = "LIGA")
@@ -107,6 +103,12 @@ namespace @switch
                 Console.WriteLine(ex.Message);
             }
             //return sbResult.ToString();
+        }
+        static public void switchCSS(string srcDest, string srcTarget){
+            
+        }
+        static public void switchImagesFolder(){
+
         }
     }
 }
