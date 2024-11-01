@@ -1,4 +1,4 @@
-﻿# liga-sync
+﻿# CLG-sync
 
 ## CLI arguments
 
